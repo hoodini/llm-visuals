@@ -11,7 +11,7 @@ import {
   PROVIDER_COLORS,
   PROVIDER_LABELS,
 } from '@/lib/utils';
-import { X, Clock, Coins, Zap, FileText, Wrench, MessageSquare, Code2 } from 'lucide-react';
+import { X, Clock, Coins, Zap, FileText, Wrench, MessageSquare, Code2, Microscope } from 'lucide-react';
 
 type Tab = 'overview' | 'request' | 'response' | 'system' | 'tools' | 'headers';
 
@@ -26,9 +26,14 @@ export function RequestDetail() {
 
   if (!request) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-3">
-        <MessageSquare className="w-10 h-10 text-zinc-800" />
-        <p className="text-sm">Select a request to inspect</p>
+      <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-4 animate-fade-in">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/10 to-blue-500/10 flex items-center justify-center border border-violet-500/10">
+          <Microscope className="w-6 h-6 text-violet-500/40" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm text-zinc-500 font-medium">Select a request to inspect</p>
+          <p className="text-xs text-zinc-700 mt-1">Click any row to see full details</p>
+        </div>
       </div>
     );
   }
@@ -48,7 +53,7 @@ export function RequestDetail() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
         <div className="flex items-center gap-3">
           <div
             className="px-2 py-1 rounded text-xs font-bold uppercase"
@@ -76,7 +81,7 @@ export function RequestDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 px-4 py-2 border-b border-zinc-800 overflow-x-auto">
+      <div className="flex gap-1 px-4 py-2 border-b border-white/[0.04] overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -133,7 +138,7 @@ export function RequestDetail() {
             </div>
 
             {/* Path */}
-            <div className="bg-zinc-900 rounded-lg p-3">
+            <div className="glass-card rounded-xl p-3">
               <div className="text-xs text-zinc-500 mb-1">Endpoint</div>
               <div className="font-mono text-sm text-zinc-300">
                 {request.method} {request.url}
@@ -142,7 +147,7 @@ export function RequestDetail() {
 
             {/* Response preview */}
             {(request.fullResponseText || streamingText) && (
-              <div className="bg-zinc-900 rounded-lg p-3">
+              <div className="glass-card rounded-xl p-3">
                 <div className="text-xs text-zinc-500 mb-2">Response Preview</div>
                 <div className="text-sm text-zinc-300 whitespace-pre-wrap break-words max-h-64 overflow-y-auto font-mono leading-relaxed">
                   {request.fullResponseText || streamingText}
@@ -155,7 +160,7 @@ export function RequestDetail() {
         {tab === 'system' && (
           <div className="space-y-3">
             {request.systemPrompt ? (
-              <div className="bg-zinc-900 rounded-lg border-l-2 border-amber-500/50">
+              <div className="glass-card rounded-xl border-l-2 border-amber-500/50">
                 <div className="px-4 py-2 border-b border-zinc-800">
                   <span className="text-xs text-amber-400 font-medium">System Prompt</span>
                 </div>
@@ -176,7 +181,7 @@ export function RequestDetail() {
         {tab === 'response' && (
           <div className="space-y-3">
             {request.fullResponseText && (
-              <div className="bg-zinc-900 rounded-lg p-4">
+              <div className="glass-card rounded-xl p-4">
                 <div className="text-xs text-zinc-500 mb-2">Full Response Text</div>
                 <pre className="text-sm text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
                   {request.fullResponseText}
@@ -195,7 +200,7 @@ export function RequestDetail() {
               <div className="text-sm text-zinc-600 text-center py-8">No tools defined</div>
             ) : (
               request.tools.map((tool, i) => (
-                <div key={i} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
+                <div key={i} className="glass-card rounded-xl p-4 border border-zinc-800">
                   <div className="flex items-center gap-2 mb-2">
                     <Wrench className="w-4 h-4 text-violet-400" />
                     <span className="font-mono text-sm text-zinc-200 font-medium">{tool.name}</span>
@@ -242,7 +247,7 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-zinc-900 rounded-lg p-3 flex items-center gap-3">
+    <div className="glass-card rounded-xl p-3 flex items-center gap-3">
       <div className="text-zinc-600">{icon}</div>
       <div>
         <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</div>
@@ -261,7 +266,7 @@ function JsonViewer({ json, label }: { json: string; label: string }) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-lg">
+    <div className="glass-card rounded-xl">
       <div className="px-4 py-2 border-b border-zinc-800">
         <span className="text-xs text-zinc-500">{label}</span>
       </div>
@@ -274,7 +279,7 @@ function JsonViewer({ json, label }: { json: string; label: string }) {
 
 function HeaderTable({ label, headers }: { label: string; headers: Record<string, string> }) {
   return (
-    <div className="bg-zinc-900 rounded-lg">
+    <div className="glass-card rounded-xl">
       <div className="px-4 py-2 border-b border-zinc-800">
         <span className="text-xs text-zinc-500">{label}</span>
       </div>
