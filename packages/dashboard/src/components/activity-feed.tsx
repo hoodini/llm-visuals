@@ -1,12 +1,12 @@
 'use client';
 
-import { useRequestStore } from '@/hooks/use-request-store';
-import { formatDuration, formatTokens, formatCost, formatTime, PROVIDER_COLORS, PROVIDER_LABELS } from '@/lib/utils';
+import { useFilteredRequests } from '@/hooks/use-request-store';
+import { formatDuration, formatTokens, formatTime, PROVIDER_COLORS } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownLeft, Clock, Zap } from 'lucide-react';
 
 export function ActivityFeed() {
-  const requests = useRequestStore((s) => s.getFilteredRequests());
+  const requests = useFilteredRequests();
   const recent = requests.slice(0, 20);
 
   if (recent.length === 0) return null;

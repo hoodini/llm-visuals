@@ -1,13 +1,13 @@
 'use client';
 
-import { useRequestStore } from '@/hooks/use-request-store';
+import { useRequestStore, useFilteredRequests } from '@/hooks/use-request-store';
 import { RequestRow } from './request-row';
 import { SetupGuide } from '../setup-guide';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function RequestList() {
-  const requests = useRequestStore((s) => s.getFilteredRequests());
+  const requests = useFilteredRequests();
   const filters = useRequestStore((s) => s.filters);
   const setFilters = useRequestStore((s) => s.setFilters);
 

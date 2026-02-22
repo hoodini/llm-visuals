@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import type { RequestRecord, MetricsSnapshot } from '@/lib/types';
 
@@ -25,13 +26,9 @@ interface RequestStore {
   setFilters: (filters: Partial<Filters>) => void;
   setSelectedId: (id: string | null) => void;
   setWsStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
-
-  // Derived
-  getFilteredRequests: () => RequestRecord[];
-  getSelectedRequest: () => RequestRecord | undefined;
 }
 
-export const useRequestStore = create<RequestStore>((set, get) => ({
+export const useRequestStore = create<RequestStore>((set) => ({
   requests: new Map(),
   orderedIds: [],
   streamingChunks: new Map(),
@@ -66,7 +63,6 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
     set((state) => {
       const requests = new Map(state.requests);
       requests.set(record.id, record);
-      // Remove from streaming chunks when complete
       const streamingChunks = new Map(state.streamingChunks);
       streamingChunks.delete(record.id);
       return { requests, streamingChunks };
@@ -84,9 +80,15 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
   setFilters: (filters) => set((state) => ({ filters: { ...state.filters, ...filters } })),
   setSelectedId: (id) => set({ selectedId: id }),
   setWsStatus: (status) => set({ wsStatus: status }),
+}));
 
-  getFilteredRequests: () => {
-    const { requests, orderedIds, filters } = get();
+/** Derived hook — filters requests based on current filter state. Memoized to avoid re-render loops. */
+export function useFilteredRequests(): RequestRecord[] {
+  const requests = useRequestStore((s) => s.requests);
+  const orderedIds = useRequestStore((s) => s.orderedIds);
+  const filters = useRequestStore((s) => s.filters);
+
+  return useMemo(() => {
     return orderedIds
       .map((id) => requests.get(id)!)
       .filter((r) => {
@@ -104,10 +106,15 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
         }
         return true;
       });
-  },
+  }, [requests, orderedIds, filters]);
+}
 
-  getSelectedRequest: () => {
-    const { requests, selectedId } = get();
+/** Derived hook — gets the currently selected request. Memoized to avoid re-render loops. */
+export function useSelectedRequest(): RequestRecord | undefined {
+  const requests = useRequestStore((s) => s.requests);
+  const selectedId = useRequestStore((s) => s.selectedId);
+
+  return useMemo(() => {
     return selectedId ? requests.get(selectedId) : undefined;
-  },
-}));
+  }, [requests, selectedId]);
+}

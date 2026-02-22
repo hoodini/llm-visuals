@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRequestStore } from '@/hooks/use-request-store';
+import { useRequestStore, useSelectedRequest } from '@/hooks/use-request-store';
 import {
   cn,
   formatDuration,
@@ -18,7 +18,7 @@ type Tab = 'overview' | 'context' | 'request' | 'response' | 'system' | 'tools' 
 
 export function RequestDetail() {
   const selectedId = useRequestStore((s) => s.selectedId);
-  const request = useRequestStore((s) => s.getSelectedRequest());
+  const request = useSelectedRequest();
   const streamingText = useRequestStore((s) =>
     selectedId ? s.streamingChunks.get(selectedId) : undefined
   );
