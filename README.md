@@ -2,6 +2,10 @@
 
 ![LLM Visuals Dashboard](monitor.png)
 
+![Metrics — KPIs, Latency, Duration](metrics-kpis.png)
+
+![Metrics — Charts, Model Performance, Health](metrics-charts.png)
+
 See exactly what your AI coding agents are sending and receiving. Every token, every hidden system prompt, every tool call - in real time.
 
 ```
@@ -458,7 +462,7 @@ llm-visuals/
 │   │       ├── storage/memory.ts         # In-memory ring buffer (10k max)
 │   │       ├── ws/broadcaster.ts         # WebSocket server for real-time dashboard updates
 │   │       └── metrics/collector.ts      # Metrics aggregation (avg, p95, timelines, groupings)
-│   └── dashboard/                        # @llm-visuals/dashboard (Next.js 15)
+│   └── dashboard/                        # @llm-visuals/dashboard (Next.js 16)
 │       └── src/
 │           ├── app/page.tsx              # Main 2-panel layout
 │           ├── components/
@@ -519,7 +523,7 @@ Key files to know:
 1. **"Add a new provider"** — Follow the pattern in `packages/proxy/src/providers/registry.ts`. You need: a Provider class, an SSE assembler, a cost table, and extraction logic.
 2. **"Show more data in the dashboard"** — The `RequestRecord` type in `packages/shared/src/types/request.ts` is the source of truth. Add fields there, populate them in the proxy's `server.ts`, mirror them in `packages/dashboard/src/lib/types.ts`.
 3. **"Fix the proxy"** — Start with `packages/proxy/src/server.ts`. The `proxyRes` handler is where response processing happens. For streaming, look at `interceptor/stream.ts`.
-4. **"Make the dashboard look different"** — The global styles are in `packages/dashboard/src/app/globals.css`. The dark theme uses zinc-950 background with glass-card effects.
+4. **"Make the dashboard look different"** — The global styles are in `packages/dashboard/src/app/globals.css`. The theme uses a bright violet palette with CSS gradient blobs and card hover effects.
 
 ---
 
@@ -640,7 +644,7 @@ export OPENAI_BASE_URL=http://localhost:4000/openai
 
 ### Tech Stack
 - **Proxy**: Node.js, `http-proxy`, `ws` (WebSocket), `nanoid`
-- **Dashboard**: Next.js 15 (Turbopack), Tailwind CSS, Zustand, Recharts, Lucide icons
+- **Dashboard**: Next.js 16 (Turbopack), Tailwind CSS 4, Zustand, Recharts, Framer Motion, Lucide icons
 - **Shared**: TypeScript types, SSE stream parsers, per-provider pricing tables
 - **Build**: npm workspaces + Turborepo
 
