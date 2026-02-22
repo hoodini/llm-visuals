@@ -23,19 +23,19 @@ export default function Dashboard() {
   const showDetail = selectedId !== null;
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground noise-bg">
+    <div className="flex flex-col h-screen bg-background text-foreground bright-mesh-bg">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10">
         {/* Left panel: Request list */}
-        <div className="w-[58%] border-r border-white/[0.03] flex flex-col overflow-hidden">
+        <div className="w-[58%] border-r border-slate-200/60 flex flex-col overflow-hidden">
           <RequestList />
         </div>
 
         {/* Right panel */}
-        <div className="w-[42%] flex flex-col overflow-hidden">
+        <div className="w-[42%] flex flex-col overflow-hidden bg-slate-50/50">
           {/* Panel switcher tabs */}
           {hasRequests && (
-            <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.03]">
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-200/60 bg-white/60 backdrop-blur-sm">
               {([
                 { id: 'metrics' as const, label: 'Metrics', icon: <BarChart3 className="w-3.5 h-3.5" /> },
                 { id: 'detail' as const, label: 'Inspector', icon: <Microscope className="w-3.5 h-3.5" /> },
@@ -56,10 +56,10 @@ export default function Dashboard() {
                       }
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all',
+                      'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
                       isActive
-                        ? 'bg-white/[0.05] text-zinc-200 border border-white/[0.06]'
-                        : 'text-zinc-600 hover:text-zinc-400'
+                        ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/20'
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
                     )}
                   >
                     {tab.icon}

@@ -7,8 +7,6 @@ import {
   Clock,
   Coins,
   Activity,
-  TrendingUp,
-  Users,
   Gauge,
   ArrowUp,
   ArrowDown,
@@ -34,15 +32,15 @@ export function MetricsPanel() {
 
   if (!metrics || metrics.totalRequests === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-4 animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4 animate-fade-in">
         <div className="relative">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-blue-500/10 flex items-center justify-center border border-violet-500/10">
-            <Activity className="w-7 h-7 text-violet-500/40" />
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-pink-100 flex items-center justify-center border border-violet-200/50 shadow-xl shadow-violet-500/10 animate-float">
+            <Activity className="w-8 h-8 text-violet-500" />
           </div>
         </div>
         <div className="text-center">
-          <p className="text-sm text-zinc-500 font-medium">Waiting for data...</p>
-          <p className="text-xs text-zinc-700 mt-1">Metrics appear once requests flow through the proxy</p>
+          <p className="text-sm text-slate-500 font-semibold">Waiting for data...</p>
+          <p className="text-xs text-slate-300 mt-1">Metrics appear once requests flow through the proxy</p>
         </div>
       </div>
     );
@@ -53,7 +51,7 @@ export function MetricsPanel() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
 
-  const MODEL_COLORS = ['#8b5cf6', '#f97316', '#22c55e', '#3b82f6', '#ef4444', '#eab308', '#ec4899', '#06b6d4'];
+  const MODEL_COLORS = ['#8b5cf6', '#ec4899', '#f97316', '#3b82f6', '#ef4444', '#eab308', '#06b6d4', '#22c55e'];
 
   const providerCostData = Object.entries(metrics.costByProvider).map(([name, value]) => ({
     name: PROVIDER_LABELS[name] || name,
@@ -70,34 +68,37 @@ export function MetricsPanel() {
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto h-full">
-      {/* Hero stats - big numbers */}
-      <div className="glass-card rounded-xl p-5 glow-border">
-        <div className="grid grid-cols-3 gap-6">
+      {/* Hero stats */}
+      <div className="glass-card rounded-2xl p-5 glow-border rainbow-border">
+        <div className="grid grid-cols-3 gap-6 relative z-10">
           <HeroStat
             value={String(metrics.totalRequests)}
             label="Requests"
             icon={<Zap className="w-4 h-4" />}
-            color="text-violet-400"
-            bgColor="bg-violet-500/10"
+            color="text-violet-500"
+            bgColor="bg-violet-100"
+            glowColor="shadow-violet-500/20"
           />
           <HeroStat
             value={formatTokens(totalTokens)}
             label="Total Tokens"
             icon={<Flame className="w-4 h-4" />}
-            color="text-cyan-400"
-            bgColor="bg-cyan-500/10"
+            color="text-pink-500"
+            bgColor="bg-pink-100"
+            glowColor="shadow-pink-500/20"
           />
           <HeroStat
             value={formatCost(metrics.totalCost)}
             label="Total Cost"
             icon={<Coins className="w-4 h-4" />}
-            color="text-emerald-400"
-            bgColor="bg-emerald-500/10"
+            color="text-emerald-500"
+            bgColor="bg-emerald-100"
+            glowColor="shadow-emerald-500/20"
           />
         </div>
       </div>
 
-      {/* Speed + Latency cards */}
+      {/* Speed + Latency */}
       <div className="grid grid-cols-2 gap-3">
         <SpeedCard
           label="Tokens/sec"
@@ -107,71 +108,73 @@ export function MetricsPanel() {
         />
         <div className="glass-card rounded-xl p-4 glow-border">
           <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Latency</span>
+            <div className="p-1.5 rounded-lg bg-blue-50">
+              <Clock className="w-3.5 h-3.5 text-blue-500" />
+            </div>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Latency</span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex items-baseline justify-between">
-              <span className="text-xs text-zinc-500">TTFB</span>
-              <span className="font-mono text-sm font-bold text-blue-300">{formatDuration(metrics.avgTTFB)}</span>
+              <span className="text-xs text-slate-400 font-medium">TTFB</span>
+              <span className="font-mono text-sm font-bold text-blue-600">{formatDuration(metrics.avgTTFB)}</span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-xs text-zinc-500">Avg</span>
-              <span className="font-mono text-sm font-bold text-zinc-200">{formatDuration(metrics.avgDuration)}</span>
+              <span className="text-xs text-slate-400 font-medium">Avg</span>
+              <span className="font-mono text-sm font-bold text-slate-700">{formatDuration(metrics.avgDuration)}</span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-xs text-zinc-500">P95</span>
-              <span className="font-mono text-sm font-bold text-amber-400">{formatDuration(metrics.p95Duration)}</span>
+              <span className="text-xs text-slate-400 font-medium">P95</span>
+              <span className="font-mono text-sm font-bold text-amber-600">{formatDuration(metrics.p95Duration)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Token I/O breakdown */}
+      {/* Token I/O */}
       <div className="glass-card rounded-xl p-4 glow-border">
-        <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Token Flow</div>
+        <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Token Flow</div>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-lg bg-blue-500/10">
-              <ArrowUp className="w-4 h-4 text-blue-400" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-500/20">
+              <ArrowUp className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-xl font-mono font-bold text-zinc-100 animate-count-up">
+              <div className="text-xl font-mono font-bold text-slate-800 animate-count-up">
                 {formatTokens(metrics.totalInputTokens)}
               </div>
-              <div className="text-[10px] text-zinc-600">Input tokens sent</div>
+              <div className="text-[10px] text-slate-400">Input tokens sent</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-lg bg-violet-500/10">
-              <ArrowDown className="w-4 h-4 text-violet-400" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 shadow-lg shadow-violet-500/20">
+              <ArrowDown className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-xl font-mono font-bold text-zinc-100 animate-count-up">
+              <div className="text-xl font-mono font-bold text-slate-800 animate-count-up">
                 {formatTokens(metrics.totalOutputTokens)}
               </div>
-              <div className="text-[10px] text-zinc-600">Output tokens received</div>
+              <div className="text-[10px] text-slate-400">Output tokens received</div>
             </div>
           </div>
         </div>
         {/* Ratio bar */}
         {totalTokens > 0 && (
           <div className="mt-4">
-            <div className="h-2 rounded-full bg-zinc-800 overflow-hidden flex">
+            <div className="h-3 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-l-full transition-all duration-700"
+                className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-l-full transition-all duration-700"
                 style={{ width: `${(metrics.totalInputTokens / totalTokens) * 100}%` }}
               />
               <div
-                className="h-full bg-gradient-to-r from-violet-500 to-violet-400 rounded-r-full transition-all duration-700"
+                className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-r-full transition-all duration-700"
                 style={{ width: `${(metrics.totalOutputTokens / totalTokens) * 100}%` }}
               />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-[10px] text-blue-500">
+              <span className="text-[10px] text-blue-500 font-bold">
                 {Math.round((metrics.totalInputTokens / totalTokens) * 100)}% in
               </span>
-              <span className="text-[10px] text-violet-500">
+              <span className="text-[10px] text-violet-500 font-bold">
                 {Math.round((metrics.totalOutputTokens / totalTokens) * 100)}% out
               </span>
             </div>
@@ -179,38 +182,38 @@ export function MetricsPanel() {
         )}
       </div>
 
-      {/* Token timeline chart */}
+      {/* Token timeline */}
       {tokenTimelineData.length > 1 && (
         <div className="glass-card rounded-xl p-4 glow-border">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Tokens Over Time</div>
+          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Tokens Over Time</div>
           <div className="h-36">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={tokenTimelineData}>
                 <defs>
                   <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                    <stop offset="100%" stopColor="#ec4899" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 9, fill: '#52525b' }}
+                  tick={{ fontSize: 9, fill: '#94a3b8' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 9, fill: '#52525b' }}
+                  tick={{ fontSize: 9, fill: '#94a3b8' }}
                   axisLine={false}
                   tickLine={false}
                   width={45}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f0f14',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '10px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
                     fontSize: '11px',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                   }}
                 />
                 <Area
@@ -218,7 +221,7 @@ export function MetricsPanel() {
                   dataKey="tokens"
                   stroke="#8b5cf6"
                   fill="url(#tokenGrad)"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -229,7 +232,7 @@ export function MetricsPanel() {
       {/* Model usage pie */}
       {modelData.length > 0 && (
         <div className="glass-card rounded-xl p-4 glow-border">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Model Usage</div>
+          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Model Usage</div>
           <div className="flex items-center gap-4">
             <div className="h-28 w-28 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -255,11 +258,11 @@ export function MetricsPanel() {
               {modelData.map((m, i) => (
                 <div key={m.name} className="flex items-center gap-2 text-xs group">
                   <span
-                    className="w-2 h-2 rounded-full shrink-0 transition-transform group-hover:scale-125"
+                    className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover:scale-125 shadow-sm"
                     style={{ backgroundColor: MODEL_COLORS[i % MODEL_COLORS.length] }}
                   />
-                  <span className="text-zinc-400 truncate font-mono text-[11px]">{m.name}</span>
-                  <span className="text-zinc-600 ml-auto font-mono text-[11px]">{m.value}</span>
+                  <span className="text-slate-600 truncate font-mono text-[11px] font-medium">{m.name}</span>
+                  <span className="text-slate-400 ml-auto font-mono text-[11px] font-bold">{m.value}</span>
                 </div>
               ))}
             </div>
@@ -270,13 +273,13 @@ export function MetricsPanel() {
       {/* Cost by provider */}
       {providerCostData.length > 0 && (
         <div className="glass-card rounded-xl p-4 glow-border">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Cost by Provider</div>
+          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Cost by Provider</div>
           <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={providerCostData} layout="vertical">
                 <XAxis
                   type="number"
-                  tick={{ fontSize: 9, fill: '#52525b' }}
+                  tick={{ fontSize: 9, fill: '#94a3b8' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v.toFixed(2)}`}
@@ -284,22 +287,22 @@ export function MetricsPanel() {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                  tick={{ fontSize: 10, fill: '#64748b' }}
                   axisLine={false}
                   tickLine={false}
                   width={75}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f0f14',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '10px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
                     fontSize: '11px',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                   }}
                   formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']}
                 />
-                <Bar dataKey="cost" radius={[0, 6, 6, 0]} barSize={14}>
+                <Bar dataKey="cost" radius={[0, 8, 8, 0]} barSize={16}>
                   {providerCostData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -319,20 +322,22 @@ function HeroStat({
   icon,
   color,
   bgColor,
+  glowColor,
 }: {
   value: string;
   label: string;
   icon: React.ReactNode;
   color: string;
   bgColor: string;
+  glowColor: string;
 }) {
   return (
     <div className="text-center">
-      <div className={cn('inline-flex items-center justify-center w-8 h-8 rounded-lg mb-2', bgColor)}>
+      <div className={cn('inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2 shadow-lg', bgColor, glowColor)}>
         <div className={color}>{icon}</div>
       </div>
-      <div className="text-2xl font-mono font-bold text-zinc-100 animate-count-up">{value}</div>
-      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">{label}</div>
+      <div className="text-2xl font-mono font-bold text-slate-800 animate-count-up">{value}</div>
+      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">{label}</div>
     </div>
   );
 }
@@ -349,24 +354,24 @@ function SpeedCard({
   color: string;
 }) {
   const percentage = Math.min((value / max) * 100, 100);
-  const angle = (percentage / 100) * 180;
 
   return (
     <div className="glass-card rounded-xl p-4 glow-border">
       <div className="flex items-center gap-2 mb-3">
-        <Gauge className="w-3.5 h-3.5 text-violet-400" />
-        <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</span>
+        <div className="p-1.5 rounded-lg bg-violet-50">
+          <Gauge className="w-3.5 h-3.5 text-violet-500" />
+        </div>
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">{label}</span>
       </div>
 
       {/* Mini gauge */}
       <div className="flex items-center justify-center mb-2">
         <div className="relative w-24 h-14 overflow-hidden">
-          {/* Background arc */}
           <svg viewBox="0 0 120 70" className="w-full h-full">
             <path
               d="M 10 65 A 50 50 0 0 1 110 65"
               fill="none"
-              stroke="#1e1e24"
+              stroke="#e2e8f0"
               strokeWidth="8"
               strokeLinecap="round"
             />
@@ -379,7 +384,7 @@ function SpeedCard({
               strokeDasharray={`${percentage * 1.57} 157`}
               className="transition-all duration-700 ease-out"
               style={{
-                filter: `drop-shadow(0 0 6px ${color}40)`,
+                filter: `drop-shadow(0 0 8px ${color}50)`,
               }}
             />
           </svg>
@@ -387,8 +392,8 @@ function SpeedCard({
       </div>
 
       <div className="text-center">
-        <span className="text-xl font-mono font-bold text-zinc-100">{value}</span>
-        <span className="text-xs text-zinc-600 ml-1">tok/s</span>
+        <span className="text-xl font-mono font-bold text-slate-800">{value}</span>
+        <span className="text-xs text-slate-400 ml-1 font-medium">tok/s</span>
       </div>
     </div>
   );

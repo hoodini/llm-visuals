@@ -12,12 +12,12 @@ export function RequestRow({ record: r, index }: { record: RequestRecord; index:
 
   const statusColor =
     r.statusCode === null
-      ? 'text-amber-400'
+      ? 'text-amber-500'
       : r.statusCode >= 200 && r.statusCode < 300
-        ? 'text-emerald-400'
+        ? 'text-emerald-500'
         : r.statusCode >= 400
-          ? 'text-red-400'
-          : 'text-zinc-400';
+          ? 'text-red-500'
+          : 'text-slate-500';
 
   const providerColor = PROVIDER_COLORS[r.provider] || '#71717a';
 
@@ -25,30 +25,30 @@ export function RequestRow({ record: r, index }: { record: RequestRecord; index:
     <button
       onClick={() => setSelectedId(isSelected ? null : r.id)}
       className={cn(
-        'w-full text-left px-4 py-2.5 border-b border-white/[0.02] transition-all duration-200 flex items-center gap-3 group',
+        'w-full text-left px-4 py-2.5 border-b border-slate-100 transition-all duration-200 flex items-center gap-3 group',
         index === 0 && 'animate-slide-in',
-        isSelected && 'bg-violet-500/[0.06] border-l-2 border-l-violet-500',
-        !isSelected && 'hover:bg-white/[0.02]',
+        isSelected && 'bg-violet-50 border-l-[3px] border-l-violet-500 shadow-inner shadow-violet-500/5',
+        !isSelected && 'hover:bg-slate-50/80',
         isStreaming && !isSelected && 'animate-shimmer'
       )}
     >
       {/* Status dot */}
       <div className="shrink-0 w-6 flex justify-center">
         {r.statusCode === null ? (
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse-dot" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse-dot shadow-sm shadow-amber-400/50" />
         ) : (
-          <span className={cn('font-mono text-[11px] font-medium', statusColor)}>
+          <span className={cn('font-mono text-[11px] font-bold', statusColor)}>
             {r.statusCode}
           </span>
         )}
       </div>
 
-      {/* Provider badge with color accent */}
+      {/* Provider badge */}
       <div
-        className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 border"
+        className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm"
         style={{
-          backgroundColor: `${providerColor}10`,
-          borderColor: `${providerColor}20`,
+          backgroundColor: `${providerColor}18`,
+          border: `1px solid ${providerColor}30`,
           color: providerColor,
         }}
       >
@@ -56,59 +56,59 @@ export function RequestRow({ record: r, index }: { record: RequestRecord; index:
       </div>
 
       {/* Model name */}
-      <span className="text-[11px] text-zinc-300 font-mono truncate min-w-0 max-w-[160px]">
+      <span className="text-[11px] text-slate-700 font-mono font-medium truncate min-w-0 max-w-[160px]">
         {r.model || 'unknown'}
       </span>
 
       {/* Context badges */}
       <div className="flex items-center gap-1 shrink-0">
         {r.totalMessageCount > 0 && (
-          <span className="text-[9px] text-zinc-600 font-mono">{r.totalMessageCount}msg</span>
+          <span className="text-[9px] text-slate-400 font-mono">{r.totalMessageCount}msg</span>
         )}
         {r.hasThinkingBlocks && (
-          <span className="w-1.5 h-1.5 rounded-full bg-pink-400" title="Thinking" />
+          <span className="w-1.5 h-1.5 rounded-full bg-pink-400 shadow-sm shadow-pink-400/50" title="Thinking" />
         )}
         {r.hasToolUse && (
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Tool Use" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" title="Tool Use" />
         )}
         {r.hasCacheControl && (
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" title="Cache" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" title="Cache" />
         )}
       </div>
 
-      {/* Path - subtle */}
-      <span className="text-[10px] text-zinc-700 font-mono truncate flex-1 min-w-0">
+      {/* Path */}
+      <span className="text-[10px] text-slate-300 font-mono truncate flex-1 min-w-0">
         {r.path}
       </span>
 
       {/* Streaming indicator */}
       {isStreaming && (
-        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/[0.08] border border-amber-500/10 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
-          <span className="text-[9px] text-amber-400 font-medium">STREAMING</span>
+        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 shadow-md shadow-amber-400/20 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse-dot" />
+          <span className="text-[9px] text-white font-bold">STREAMING</span>
         </span>
       )}
 
       {/* Duration */}
-      <span className="text-[11px] text-zinc-500 font-mono w-14 text-right shrink-0">
+      <span className="text-[11px] text-slate-500 font-mono w-14 text-right shrink-0">
         {formatDuration(r.duration)}
       </span>
 
       {/* Tokens */}
-      <span className="text-[11px] text-zinc-600 font-mono w-14 text-right shrink-0">
+      <span className="text-[11px] text-slate-400 font-mono w-14 text-right shrink-0">
         {r.outputTokens > 0 ? formatTokens(r.outputTokens) : '-'}
       </span>
 
-      {/* Cost - green tint */}
+      {/* Cost */}
       <span className={cn(
-        'text-[11px] font-mono w-14 text-right shrink-0',
-        r.estimatedCost > 0.01 ? 'text-emerald-500/70' : 'text-zinc-700'
+        'text-[11px] font-mono w-14 text-right shrink-0 font-medium',
+        r.estimatedCost > 0.01 ? 'text-emerald-600' : 'text-slate-300'
       )}>
         {r.estimatedCost > 0 ? formatCost(r.estimatedCost) : '-'}
       </span>
 
       {/* Time */}
-      <span className="text-[10px] text-zinc-700 font-mono w-14 text-right shrink-0">
+      <span className="text-[10px] text-slate-300 font-mono w-14 text-right shrink-0">
         {formatTime(r.startedAt)}
       </span>
     </button>
