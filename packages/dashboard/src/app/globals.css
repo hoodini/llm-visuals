@@ -15,8 +15,8 @@
   --color-openai: #059669;
   --color-gemini: #2563eb;
 
-  --font-display: var(--font-outfit);
-  --font-sans: var(--font-plus-jakarta);
+  --font-display: var(--font-sora);
+  --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-jetbrains);
 }
 
@@ -56,13 +56,13 @@ body {
    TYPOGRAPHY
    ════════════════════════════════════════════ */
 .font-display {
-  font-family: var(--font-outfit), var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sora), var(--font-sans), system-ui, sans-serif;
   letter-spacing: -0.025em;
 }
 .text-tabular { font-variant-numeric: tabular-nums; }
 
 /* ════════════════════════════════════════════
-   CARD SYSTEM — soft violet shadow, hover lift
+   CARD SYSTEM
    ════════════════════════════════════════════ */
 .card {
   background: var(--surface);
@@ -79,6 +79,62 @@ body {
     0 8px 28px rgba(124, 58, 237, 0.09);
   transform: translateY(-1px);
   border-color: rgba(124, 58, 237, 0.1);
+}
+
+/* ════════════════════════════════════════════
+   BACKGROUND EFFECTS — gradient blobs + grain
+   ════════════════════════════════════════════ */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+}
+.bg-blob-1 {
+  width: 700px;
+  height: 700px;
+  top: -200px;
+  right: -150px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.09), transparent 70%);
+  filter: blur(80px);
+  animation: drift-1 25s ease-in-out infinite;
+}
+.bg-blob-2 {
+  width: 500px;
+  height: 500px;
+  bottom: -100px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.07), rgba(232, 121, 249, 0.03) 50%, transparent 70%);
+  filter: blur(100px);
+  animation: drift-2 30s ease-in-out infinite;
+}
+.bg-blob-3 {
+  width: 300px;
+  height: 300px;
+  top: 45%;
+  left: 35%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.06), transparent 70%);
+  filter: blur(60px);
+  animation: drift-3 20s ease-in-out infinite;
+}
+
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40px, 30px) scale(1.05); }
+  66% { transform: translate(20px, -20px) scale(0.95); }
+}
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -40px) scale(1.03); }
+  66% { transform: translate(-20px, 20px) scale(0.97); }
+}
+@keyframes drift-3 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-20px, -15px); }
+}
+
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  mix-blend-mode: multiply;
 }
 
 /* ════════════════════════════════════════════
@@ -123,7 +179,6 @@ body {
   100% { transform: translateX(100%); }
 }
 
-/* Streaming line — sweeping violet */
 .stream-line { position: relative; overflow: hidden; }
 .stream-line::after {
   content: '';

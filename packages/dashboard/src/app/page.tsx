@@ -11,9 +11,7 @@ import { useState } from 'react';
 import { BarChart3, Microscope, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
-
-const ThreeBackground = dynamic(() => import('@/components/three-background'), { ssr: false });
+import BackgroundEffects from '@/components/three-background';
 
 type RightPanel = 'metrics' | 'detail' | 'feed';
 
@@ -28,7 +26,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <ThreeBackground />
+      <BackgroundEffects />
       <Header />
       <div className="flex flex-1 overflow-hidden relative z-10">
         <div className="w-[58%] border-r border-[rgba(124,58,237,0.06)] flex flex-col overflow-hidden">
