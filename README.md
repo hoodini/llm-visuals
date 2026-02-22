@@ -64,33 +64,39 @@ Claude Code  ──>  localhost:4000  ──>  api.anthropic.com
 
 The proxy receives the request, records it, forwards it unchanged to the real API, gets the response, records that too, and passes it back. Your tool works exactly the same — it just goes through a local middleman first.
 
-**Your API keys pass straight through.** The proxy doesn't need or store them. It just observes.
+**Your credentials pass straight through.** Whether you use a subscription (OAuth token) or an API key, the proxy doesn't need or store them. It just observes and forwards.
 
 ## What Works and What Doesn't
 
-This proxy can only intercept tools that let you configure their API endpoint. Here's the reality:
+This is a reverse proxy — it works by intercepting traffic between your tools and LLM APIs. Whether you use a subscription or your own API key, the auth passes through transparently. The proxy doesn't need or store credentials.
 
-### Works (you can observe these)
+### Works — reverse proxy intercept
 
-| Tool | How | Why it works |
-|------|-----|-------------|
-| **Claude Code** (VSCode + CLI) | `ANTHROPIC_BASE_URL` env var | Calls Anthropic API directly, respects the env var |
-| **Cursor** (with API key mode) | Settings → API endpoint | Calls APIs directly when using your own API key |
-| **Aider** | `ANTHROPIC_BASE_URL` / `OPENAI_BASE_URL` | Calls APIs directly, respects env vars |
-| **Continue** | Config file base URL | Calls APIs directly |
-| **Any script using OpenAI/Anthropic/Gemini SDKs** | `base_url` parameter or env var | You control the SDK config |
-| **LiteLLM, LangChain, etc.** | Base URL config | Most SDKs support custom endpoints |
+| Tool | Auth type | How to connect | Notes |
+|------|-----------|---------------|-------|
+| **Claude Code** (VSCode + CLI) | Subscription or API key | `ANTHROPIC_BASE_URL` env var | Works with Claude Pro/Max subscription — the OAuth token passes through transparently |
+| **Cursor** (own key mode) | API key | Settings → API endpoint | When you add your own key, Cursor calls APIs directly |
+| **Aider** | API key | `ANTHROPIC_BASE_URL` / `OPENAI_BASE_URL` | Respects env vars |
+| **Continue** | API key | Config file `apiBase` | Calls APIs directly |
+| **Any SDK script** | API key | `base_url` parameter or env var | You control the config |
+| **LiteLLM, LangChain** | API key | Base URL config | Most frameworks support custom endpoints |
 
-### Does NOT Work (cannot observe)
+### Works — but requires BYOK setup in VS Code
 
-| Tool | Why |
-|------|-----|
-| **GitHub Copilot** | Routes ALL traffic through GitHub's own servers (`api.github.com`), not through OpenAI/Anthropic directly. Even when you select Claude or GPT-4o as the model, the requests go to GitHub first. No env var to redirect it. |
-| **ChatGPT app/web** | Uses OpenAI's own infrastructure with a session token, not an API key. Cannot redirect. |
-| **Claude.ai web** | Same — uses Anthropic's own web infrastructure, not the API. |
-| **Copilot in Cursor** | When using Copilot subscription (not your own API key), traffic goes through GitHub. |
+| Tool | How | Notes |
+|------|-----|-------|
+| **GitHub Copilot Chat** (VS Code 1.99+) | BYOK (Bring Your Own Key) — add custom models in VS Code Copilot Chat settings with your own API keys + our proxy as the base URL | This lets you use Copilot Chat with custom models routed through our proxy. Your Copilot subscription still works normally alongside BYOK models. [VS Code BYOK docs](https://code.visualstudio.com/blogs/2025/10/22/bring-your-own-key) |
 
-**The rule**: If a tool uses YOUR API key and calls the provider API directly → works. If it uses its own backend servers → doesn't work.
+### Does not work yet — traffic goes through vendor servers
+
+| Tool | Why | Possible future approach |
+|------|-----|------------------------|
+| **GitHub Copilot** (subscription models) | Copilot routes subscription traffic through GitHub's own servers (`copilot-proxy.githubusercontent.com`). Even when you pick Claude or GPT-4o, the request goes GitHub → LLM API, not your machine → LLM API directly. | Copilot supports `http_proxy`/`https_proxy` and `github.copilot.proxy` settings. Adding forward proxy (MITM) mode to this tool could capture that traffic. |
+| **ChatGPT app/web** | Traffic goes through OpenAI's web infrastructure with session cookies. | Forward proxy mode could capture this too. |
+| **Claude.ai web** | Traffic goes through Anthropic's web infrastructure with session cookies. | Same — forward proxy mode. |
+| **Cursor Pro** (subscription) | When using Cursor's subscription (not your own key), traffic goes through Cursor's servers. | Forward proxy mode. |
+
+**The honest rule**: If the tool sends requests directly from your machine to the LLM API (whether using a subscription token or an API key), our reverse proxy can intercept it. If the tool routes through its own backend servers first, we'd need forward proxy (MITM) support, which isn't built yet.
 
 ---
 
@@ -208,20 +214,25 @@ All previous session data is in memory only — it resets when you restart. (Thi
 
 ## Connecting Every LLM Tool
 
-### Claude Code (VSCode Extension)
+### Claude Code (VSCode Extension + CLI)
 
-Claude Code in VSCode respects the `ANTHROPIC_BASE_URL` environment variable. You need to set it **before** launching VSCode.
+Claude Code respects the `ANTHROPIC_BASE_URL` environment variable — whether you're using a Claude Pro/Max subscription or your own API key. The auth token (subscription OAuth or API key) passes through the proxy transparently.
+
+You need to set the env var **before** launching VSCode or the CLI.
 
 **macOS / Linux:**
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:4000/anthropic
 code .   # launch VSCode from this terminal
+# or for CLI:
+claude "your prompt here"
 ```
 
 **Windows (PowerShell):**
 ```powershell
 $env:ANTHROPIC_BASE_URL = "http://localhost:4000/anthropic"
 code .
+# or: claude "your prompt here"
 ```
 
 **Windows (CMD):**
@@ -234,12 +245,7 @@ code .
 - macOS/Linux: `~/.bashrc`, `~/.zshrc`, or `~/.profile`
 - Windows: System Environment Variables
 
-### Claude Code (CLI)
-
-```bash
-export ANTHROPIC_BASE_URL=http://localhost:4000/anthropic
-claude "your prompt here"
-```
+> **Note**: If you use a Claude subscription (not an API key), the proxy sees the same OAuth token Claude Code sends. The proxy doesn't care what kind of auth it is — it forwards everything unchanged.
 
 ### Claude Desktop
 
@@ -260,13 +266,39 @@ Then **restart Claude Desktop** completely (quit and reopen).
 
 ### GitHub Copilot
 
-**Copilot CANNOT be intercepted by this proxy.** Copilot routes all requests through GitHub's own backend servers (`api.github.com`), regardless of which model you select (Claude, GPT-4o, Gemini, o3, etc.). There is no env var or setting to redirect Copilot traffic.
+Copilot has two paths — and our proxy works with one of them:
 
-If you want to observe the same models Copilot uses, you can call them directly through their SDKs with your own API key — those calls CAN be intercepted.
+**Copilot subscription models (NOT interceptable yet):**
+Copilot's built-in models (when you select Claude, GPT-4o, etc. through your Copilot subscription) route through GitHub's own servers (`copilot-proxy.githubusercontent.com`). Our reverse proxy can't intercept this because Copilot doesn't expose a base URL setting for its subscription traffic. Copilot does support `http_proxy`/`https_proxy` environment variables and the `github.copilot.proxy` VS Code setting — but those configure a forward proxy, and our tool is currently a reverse proxy. Adding forward proxy mode is on the roadmap.
+
+**Copilot Chat BYOK — Bring Your Own Key (interceptable):**
+VS Code Copilot Chat v1.99+ lets you bring your own API keys and configure custom base URLs. This means you can route those requests through our proxy:
+
+1. Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
+2. Search for `github.copilot.chat.models`
+3. Add a custom model configuration pointing to our proxy:
+
+```json
+"github.copilot.chat.models": [
+  {
+    "vendor": "copilot",
+    "family": "claude-sonnet-4-20250514",
+    "id": "claude-sonnet-4-20250514",
+    "name": "Claude Sonnet (via proxy)",
+    "url": "http://localhost:4000/anthropic/v1/messages",
+    "headers": {
+      "x-api-key": "your-anthropic-api-key",
+      "anthropic-version": "2023-06-01"
+    }
+  }
+]
+```
+
+This requires your own API key for the BYOK models. Your regular Copilot subscription models continue to work alongside them.
+
+See [VS Code BYOK documentation](https://code.visualstudio.com/blogs/2025/10/22/bring-your-own-key) for details.
 
 ### Cursor
-
-Cursor works in two modes:
 
 **With your own API key (interceptable):**
 1. Open Cursor Settings → Models
@@ -275,8 +307,8 @@ Cursor works in two modes:
    - OpenAI models: `http://localhost:4000/openai`
    - Anthropic models: `http://localhost:4000/anthropic`
 
-**With Cursor Pro subscription (NOT interceptable):**
-When using Cursor's built-in subscription, traffic goes through Cursor's own servers. You cannot redirect it.
+**With Cursor subscription:**
+Cursor Pro/Business subscription traffic routes through Cursor's own servers, not directly to the LLM APIs. Our reverse proxy can't intercept this currently.
 
 ### OpenAI API (direct usage)
 
@@ -291,7 +323,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:4000/openai/v1",
-    api_key="sk-..."  # your real API key - proxy passes it through
+    api_key="sk-..."  # your API key - proxy passes it through unchanged
 )
 
 response = client.chat.completions.create(
@@ -469,7 +501,7 @@ The key insight: each provider has a path prefix. The proxy routes based on the 
 | `OPENAI_BASE_URL` | `http://localhost:4000/openai` | `https://api.openai.com` |
 | `GEMINI_BASE_URL` | `http://localhost:4000/gemini` | `https://generativelanguage.googleapis.com` |
 
-The user needs to set the env var **before** launching their LLM tool. API keys pass through transparently — the proxy doesn't need or store them.
+The user needs to set the env var **before** launching their LLM tool. Auth credentials (API keys or subscription tokens) pass through transparently — the proxy doesn't need or store them.
 
 ### How to help a user modify this project (for agents)
 
@@ -665,9 +697,9 @@ npm run dev --workspace=@llm-visuals/dashboard
 
 ## Security
 
-- API keys pass through the proxy transparently to the upstream API — the proxy doesn't store them
-- In the dashboard display, API keys are **always redacted** as `[REDACTED]`
-- The proxy runs 100% locally — your data never leaves your machine
+- Auth credentials (API keys, OAuth tokens, subscription tokens) pass through transparently — the proxy doesn't store them
+- In the dashboard display, auth headers are **always redacted** as `[REDACTED]`
+- The proxy runs 100% locally — your data never leaves your machine (except to the LLM APIs you're already using)
 - No telemetry, no analytics, no external connections from the proxy itself
 - Request data is stored in memory only — it's gone when you restart
 
