@@ -15,23 +15,23 @@ export function RequestList() {
   return (
     <div className="flex flex-col h-full">
       {/* Search + filters */}
-      <div className="p-3 border-b border-[rgba(255,255,255,0.04)] flex items-center gap-3 bg-[#0a0a0f]/60">
+      <div className="p-3 border-b border-[rgba(124,58,237,0.06)] flex items-center gap-3 bg-white/60 backdrop-blur-sm">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3a3a42]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9f95b8]" />
           <input
             type="text"
             placeholder="Search models, prompts, responses..."
             value={filters.search}
             onChange={(e) => setFilters({ search: e.target.value })}
-            className="w-full bg-[#0d0d12] border border-[rgba(255,255,255,0.05)] rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-foreground placeholder:text-[#3a3a42] focus:outline-none focus:border-amber-500/25 focus:ring-1 focus:ring-amber-500/10 transition-all"
+            className="w-full bg-white border border-[rgba(124,58,237,0.08)] rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-foreground placeholder:text-[#c4b5d9] focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15 transition-all"
           />
         </div>
         <div className="flex items-center gap-1">
           {(['anthropic', 'openai', 'gemini'] as const).map((p) => {
             const cfg = {
-              anthropic: { active: 'text-orange-400 border-orange-500/20 bg-orange-500/8', label: 'ANT' },
-              openai: { active: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/8', label: 'OAI' },
-              gemini: { active: 'text-blue-400 border-blue-500/20 bg-blue-500/8', label: 'GEM' },
+              anthropic: { active: 'text-orange-600 border-orange-400/30 bg-orange-50', label: 'ANT' },
+              openai: { active: 'text-emerald-600 border-emerald-400/30 bg-emerald-50', label: 'OAI' },
+              gemini: { active: 'text-blue-600 border-blue-400/30 bg-blue-50', label: 'GEM' },
             };
             const isActive = filters.provider === p;
             return (
@@ -39,10 +39,10 @@ export function RequestList() {
                 key={p}
                 onClick={() => setFilters({ provider: isActive ? null : p })}
                 className={cn(
-                  'px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all border',
+                  'px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border',
                   isActive
                     ? cfg[p].active
-                    : 'border-transparent text-[#3a3a42] hover:text-[#55555e]'
+                    : 'border-transparent text-[#c4b5d9] hover:text-[#9f95b8]'
                 )}
               >
                 {cfg[p].label}
@@ -54,7 +54,7 @@ export function RequestList() {
 
       {/* Column headers */}
       {hasAnyRequests && (
-        <div className="flex items-center gap-3 px-4 py-1 text-[9px] text-[#3a3a42] uppercase tracking-widest font-medium border-b border-[rgba(255,255,255,0.03)]">
+        <div className="flex items-center gap-3 px-4 py-1 text-[9px] text-[#9f95b8] uppercase tracking-widest font-semibold border-b border-[rgba(124,58,237,0.04)]">
           <span className="w-6 text-center">ST</span>
           <span className="w-8">SRC</span>
           <span className="max-w-[160px]">Model</span>
@@ -72,8 +72,8 @@ export function RequestList() {
           <SetupGuide />
         ) : requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 animate-fade-in">
-            <p className="text-sm text-[#55555e]">No matching requests</p>
-            <p className="text-xs text-[#3a3a42]">Try adjusting your filters</p>
+            <p className="text-sm text-[#4c4460]">No matching requests</p>
+            <p className="text-xs text-[#9f95b8]">Try adjusting your filters</p>
           </div>
         ) : (
           requests.map((r, i) => <RequestRow key={r.id} record={r} index={i} />)
@@ -82,7 +82,7 @@ export function RequestList() {
 
       {/* Status bar */}
       {hasAnyRequests && (
-        <div className="px-4 py-1.5 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between text-[10px] text-[#3a3a42] font-mono">
+        <div className="px-4 py-1.5 border-t border-[rgba(124,58,237,0.06)] flex items-center justify-between text-[10px] text-[#9f95b8] font-mono">
           <span>{requests.length} requests</span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />

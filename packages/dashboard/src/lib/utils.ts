@@ -35,8 +35,8 @@ export function formatTime(ts: number): string {
 
 export const PROVIDER_COLORS: Record<string, string> = {
   anthropic: '#f97316',
-  openai: '#22c55e',
-  gemini: '#3b82f6',
+  openai: '#059669',
+  gemini: '#2563eb',
 };
 
 export const PROVIDER_LABELS: Record<string, string> = {

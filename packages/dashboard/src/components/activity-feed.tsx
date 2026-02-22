@@ -4,6 +4,7 @@ import { useFilteredRequests } from '@/hooks/use-request-store';
 import { formatDuration, formatTokens, formatTime, PROVIDER_COLORS } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownLeft, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function ActivityFeed() {
   const requests = useFilteredRequests();
@@ -14,28 +15,29 @@ export function ActivityFeed() {
   return (
     <div className="space-y-1 p-3">
       <div className="flex items-center gap-2 px-2 mb-3">
-        <Zap className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-[10px] text-[#55555e] uppercase tracking-widest font-bold">Live Activity</span>
+        <Zap className="w-3.5 h-3.5 text-violet-500" />
+        <span className="text-[10px] text-[#9f95b8] uppercase tracking-widest font-bold">Live Activity</span>
       </div>
       {recent.map((r, i) => {
         const isStreaming = !r.completedAt && r.isStreaming;
         const providerColor = PROVIDER_COLORS[r.provider];
 
         return (
-          <div
+          <motion.div
             key={r.id}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.02, duration: 0.2 }}
             className={cn(
-              'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all',
-              i === 0 && 'animate-slide-in',
+              'flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all',
               isStreaming
-                ? 'bg-amber-500/[0.04] border border-amber-500/10'
-                : 'hover:bg-[rgba(255,255,255,0.02)]'
+                ? 'bg-violet-500/[0.04] border border-violet-200/40'
+                : 'hover:bg-violet-50/50 rounded-xl'
             )}
           >
-            {/* Direction arrow */}
             <div className={cn(
               'shrink-0 p-1 rounded-md',
-              r.completedAt ? 'text-[#3a3a42]' : 'text-amber-400'
+              r.completedAt ? 'text-[#9f95b8]' : 'text-violet-500'
             )}>
               {r.completedAt ? (
                 <ArrowDownLeft className="w-3 h-3" />
@@ -44,44 +46,38 @@ export function ActivityFeed() {
               )}
             </div>
 
-            {/* Provider dot */}
             <div
-              className="w-2 h-2 rounded-full shrink-0"
+              className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: providerColor }}
             />
 
-            {/* Model */}
-            <span className="font-mono text-[#8b8b96] truncate max-w-[140px] font-medium text-[11px]">
+            <span className="font-mono text-[#4c4460] truncate max-w-[140px] font-medium text-[11px]">
               {r.model || 'unknown'}
             </span>
 
-            {/* Streaming indicator */}
             {isStreaming && (
               <span className="flex items-center gap-1 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
-                <span className="text-[9px] text-amber-400 font-mono">LIVE</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse-dot" />
+                <span className="text-[9px] text-violet-500 font-mono font-medium">LIVE</span>
               </span>
             )}
 
             <span className="flex-1" />
 
-            {/* Tokens */}
             {r.outputTokens > 0 && (
-              <span className="font-mono text-[#3a3a42] font-medium text-[11px]">
+              <span className="font-mono text-[#c4b5d9] font-medium text-[11px]">
                 {formatTokens(r.outputTokens)}
               </span>
             )}
 
-            {/* Duration */}
-            <span className="font-mono text-[#55555e] w-14 text-right text-[11px]">
+            <span className="font-mono text-[#9f95b8] w-14 text-right text-[11px]">
               {formatDuration(r.duration)}
             </span>
 
-            {/* Time */}
-            <span className="font-mono text-[#2a2a32] w-14 text-right text-[10px]">
+            <span className="font-mono text-[#c4b5d9] w-14 text-right text-[10px]">
               {formatTime(r.startedAt)}
             </span>
-          </div>
+          </motion.div>
         );
       })}
     </div>

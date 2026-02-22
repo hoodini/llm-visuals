@@ -34,17 +34,17 @@ import {
 import { cn } from '@/lib/utils';
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#131317',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '8px',
+  backgroundColor: '#ffffff',
+  border: '1px solid rgba(124, 58, 237, 0.12)',
+  borderRadius: '10px',
   fontSize: '11px',
-  boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-  color: '#8b8b96',
+  boxShadow: '0 4px 20px rgba(124, 58, 237, 0.08)',
+  color: '#4c4460',
 };
 
-const AXIS_TICK = { fontSize: 9, fill: '#3a3a42' };
+const AXIS_TICK = { fontSize: 9, fill: '#9f95b8' };
 
-const MODEL_COLORS = ['#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#ef4444', '#22c55e', '#06b6d4', '#f97316'];
+const MODEL_COLORS = ['#7c3aed', '#ec4899', '#2563eb', '#f97316', '#059669', '#dc2626', '#06b6d4', '#a855f7'];
 
 export function MetricsPanel() {
   const metrics = useRequestStore((s) => s.metrics);
@@ -52,12 +52,12 @@ export function MetricsPanel() {
   if (!metrics || metrics.totalRequests === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-in">
-        <div className="w-16 h-16 rounded-xl bg-[#131317] border border-[rgba(255,255,255,0.05)] flex items-center justify-center">
-          <Activity className="w-6 h-6 text-[#3a3a42]" />
+        <div className="w-16 h-16 rounded-2xl bg-violet-50 border border-violet-200/40 flex items-center justify-center">
+          <Activity className="w-6 h-6 text-violet-400" />
         </div>
         <div className="text-center">
-          <p className="text-sm text-[#55555e]">Waiting for data...</p>
-          <p className="text-xs text-[#3a3a42] mt-1">Metrics appear once requests flow through the proxy</p>
+          <p className="text-sm text-[#4c4460] font-medium">Waiting for data...</p>
+          <p className="text-xs text-[#9f95b8] mt-1">Metrics appear once requests flow through the proxy</p>
         </div>
       </div>
     );
@@ -109,66 +109,59 @@ export function MetricsPanel() {
             value={String(metrics.totalRequests)}
             label="Requests"
             icon={<Zap className="w-4 h-4" />}
-            color="text-amber-400"
+            color="text-violet-500"
+            bgColor="bg-violet-50"
           />
           <HeroStat
             value={formatTokens(totalTokens)}
             label="Total Tokens"
             icon={<Flame className="w-4 h-4" />}
-            color="text-pink-400"
+            color="text-pink-500"
+            bgColor="bg-pink-50"
           />
           <HeroStat
             value={formatCost(metrics.totalCost)}
             label="Total Cost"
             icon={<Coins className="w-4 h-4" />}
-            color="text-emerald-400"
+            color="text-emerald-500"
+            bgColor="bg-emerald-50"
           />
           <HeroStat
             value={`${formatCost(metrics.costBurnRate)}/h`}
             label="Burn Rate"
             icon={<TrendingUp className="w-4 h-4" />}
-            color="text-orange-400"
+            color="text-amber-500"
+            bgColor="bg-amber-50"
           />
         </div>
       </div>
 
       {/* ═══ THROUGHPUT + LATENCY ═══ */}
       <div className="grid grid-cols-2 gap-3">
-        <SpeedCard
-          label="Tokens/sec"
-          value={metrics.avgTokensPerSecond ? Math.round(metrics.avgTokensPerSecond) : 0}
-          max={200}
-          color="#f59e0b"
-        />
-        <SpeedCard
-          label="Req/min"
-          value={Math.round(metrics.requestsPerMinute * 10) / 10}
-          max={20}
-          color="#ec4899"
-        />
+        <SpeedCard label="Tokens/sec" value={metrics.avgTokensPerSecond ? Math.round(metrics.avgTokensPerSecond) : 0} max={200} color="#7c3aed" />
+        <SpeedCard label="Req/min" value={Math.round(metrics.requestsPerMinute * 10) / 10} max={20} color="#ec4899" />
       </div>
 
       {/* ═══ LATENCY PERCENTILES ═══ */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">Latency Percentiles</span>
-          <span className="ml-auto text-[9px] text-[#3a3a42] font-mono">last 5 min</span>
+          <Clock className="w-3.5 h-3.5 text-blue-500" />
+          <span className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">Latency Percentiles</span>
+          <span className="ml-auto text-[9px] text-[#c4b5d9] font-mono">last 5 min</span>
         </div>
         <div className="grid grid-cols-4 gap-2 mb-3">
           {[
-            { label: 'TTFB', value: metrics.avgTTFB, color: 'text-sky-400' },
-            { label: 'P50', value: metrics.p50Duration, color: 'text-emerald-400' },
-            { label: 'P90', value: metrics.p90Duration, color: 'text-amber-400' },
-            { label: 'P99', value: metrics.p99Duration, color: 'text-red-400' },
+            { label: 'TTFB', value: metrics.avgTTFB, color: 'text-sky-600' },
+            { label: 'P50', value: metrics.p50Duration, color: 'text-emerald-600' },
+            { label: 'P90', value: metrics.p90Duration, color: 'text-amber-600' },
+            { label: 'P99', value: metrics.p99Duration, color: 'text-red-500' },
           ].map((p) => (
-            <div key={p.label} className="text-center p-2 rounded-lg bg-[#0d0d12] border border-[rgba(255,255,255,0.04)]">
+            <div key={p.label} className="text-center p-2 rounded-lg bg-violet-50/60 border border-violet-200/30">
               <div className={cn('font-mono text-sm font-bold', p.color)}>{formatDuration(p.value)}</div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mt-0.5">{p.label}</div>
+              <div className="text-[9px] text-[#9f95b8] font-bold mt-0.5">{p.label}</div>
             </div>
           ))}
         </div>
-        {/* Full percentile bar */}
         <div className="space-y-1">
           {[
             { label: 'P50', value: metrics.p50Duration, pct: 50 },
@@ -181,14 +174,14 @@ export function MetricsPanel() {
             const width = Math.min((p.value / maxD) * 100, 100);
             return (
               <div key={p.label} className="flex items-center gap-2">
-                <span className="text-[9px] text-[#3a3a42] w-6 font-mono font-bold">{p.label}</span>
-                <div className="flex-1 h-1.5 rounded-full bg-[#0d0d12] overflow-hidden">
+                <span className="text-[9px] text-[#9f95b8] w-6 font-mono font-bold">{p.label}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-violet-50 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-500"
                     style={{ width: `${width}%` }}
                   />
                 </div>
-                <span className="text-[9px] text-[#55555e] w-12 text-right font-mono">{formatDuration(p.value)}</span>
+                <span className="text-[9px] text-[#4c4460] w-12 text-right font-mono">{formatDuration(p.value)}</span>
               </div>
             );
           })}
@@ -199,8 +192,8 @@ export function MetricsPanel() {
       {distData.length > 0 && (
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
-            <span className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">Duration Distribution</span>
+            <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
+            <span className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">Duration Distribution</span>
           </div>
           <div className="h-28">
             <ResponsiveContainer width="100%" height="100%">
@@ -208,9 +201,9 @@ export function MetricsPanel() {
                 <XAxis dataKey="bucket" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                 <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={30} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={20}>
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={20}>
                   {distData.map((_, i) => (
-                    <Cell key={i} fill={i < 2 ? '#22c55e' : i < 4 ? '#eab308' : '#ef4444'} />
+                    <Cell key={i} fill={i < 2 ? '#059669' : i < 4 ? '#d97706' : '#dc2626'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -221,52 +214,51 @@ export function MetricsPanel() {
 
       {/* ═══ TOKEN FLOW ═══ */}
       <div className="card p-4">
-        <div className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold mb-3">Token Flow</div>
+        <div className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold mb-3">Token Flow</div>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/15">
-              <ArrowUp className="w-4 h-4 text-blue-400" />
+            <div className="p-2 rounded-xl bg-blue-50 border border-blue-200/40">
+              <ArrowUp className="w-4 h-4 text-blue-500" />
             </div>
             <div>
               <div className="text-lg font-mono font-bold text-foreground">{formatTokens(metrics.totalInputTokens)}</div>
-              <div className="text-[10px] text-[#55555e]">
-                Input <span className="text-[#3a3a42]">({formatTokens(metrics.avgInputTokensPerReq)}/req)</span>
+              <div className="text-[10px] text-[#9f95b8]">
+                Input <span className="text-[#c4b5d9]">({formatTokens(metrics.avgInputTokensPerReq)}/req)</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/15">
-              <ArrowDown className="w-4 h-4 text-violet-400" />
+            <div className="p-2 rounded-xl bg-violet-50 border border-violet-200/40">
+              <ArrowDown className="w-4 h-4 text-violet-500" />
             </div>
             <div>
               <div className="text-lg font-mono font-bold text-foreground">{formatTokens(metrics.totalOutputTokens)}</div>
-              <div className="text-[10px] text-[#55555e]">
-                Output <span className="text-[#3a3a42]">({formatTokens(metrics.avgOutputTokensPerReq)}/req)</span>
+              <div className="text-[10px] text-[#9f95b8]">
+                Output <span className="text-[#c4b5d9]">({formatTokens(metrics.avgOutputTokensPerReq)}/req)</span>
               </div>
             </div>
           </div>
         </div>
-        {/* Ratio bar */}
         {totalTokens > 0 && (
           <div className="mt-3">
-            <div className="h-2 rounded-full bg-[#0d0d12] overflow-hidden flex">
+            <div className="h-3 rounded-full bg-violet-50 overflow-hidden flex">
               <div
-                className="h-full bg-blue-500/70 rounded-l-full transition-all duration-700"
+                className="h-full bg-blue-400 rounded-l-full transition-all duration-700"
                 style={{ width: `${(metrics.totalInputTokens / totalTokens) * 100}%` }}
               />
               <div
-                className="h-full bg-violet-500/70 rounded-r-full transition-all duration-700"
+                className="h-full bg-violet-500 rounded-r-full transition-all duration-700"
                 style={{ width: `${(metrics.totalOutputTokens / totalTokens) * 100}%` }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-blue-400 font-bold">
+              <span className="text-[10px] text-blue-600 font-bold">
                 {Math.round((metrics.totalInputTokens / totalTokens) * 100)}% in
               </span>
-              <span className="text-[10px] text-[#3a3a42] font-mono">
+              <span className="text-[10px] text-[#9f95b8] font-mono">
                 efficiency: {metrics.tokenEfficiency.toFixed(2)}x
               </span>
-              <span className="text-[10px] text-violet-400 font-bold">
+              <span className="text-[10px] text-violet-600 font-bold">
                 {Math.round((metrics.totalOutputTokens / totalTokens) * 100)}% out
               </span>
             </div>
@@ -276,23 +268,23 @@ export function MetricsPanel() {
 
       {/* ═══ CACHE ECONOMICS ═══ */}
       {(metrics.cacheReadTokens > 0 || metrics.cacheCreationTokens > 0) && (
-        <div className="card p-4 border-l-2 border-l-amber-500/40">
+        <div className="card p-4 border-l-2 border-l-violet-400/40">
           <div className="flex items-center gap-2 mb-3">
-            <Database className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[10px] text-amber-400 uppercase tracking-wider font-bold">Cache Economics</span>
+            <Database className="w-3.5 h-3.5 text-violet-500" />
+            <span className="text-[10px] text-violet-600 uppercase tracking-wider font-bold">Cache Economics</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-2 rounded-lg bg-[#0d0d12] border border-[rgba(255,255,255,0.04)]">
-              <div className="font-mono text-sm font-bold text-emerald-400">{metrics.cacheHitRate.toFixed(0)}%</div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mt-0.5">Hit Rate</div>
+            <div className="text-center p-2 rounded-lg bg-emerald-50/60 border border-emerald-200/30">
+              <div className="font-mono text-sm font-bold text-emerald-600">{metrics.cacheHitRate.toFixed(0)}%</div>
+              <div className="text-[9px] text-[#9f95b8] font-bold mt-0.5">Hit Rate</div>
             </div>
-            <div className="text-center p-2 rounded-lg bg-[#0d0d12] border border-[rgba(255,255,255,0.04)]">
-              <div className="font-mono text-sm font-bold text-blue-400">{formatTokens(metrics.cacheReadTokens)}</div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mt-0.5">Cache Read</div>
+            <div className="text-center p-2 rounded-lg bg-blue-50/60 border border-blue-200/30">
+              <div className="font-mono text-sm font-bold text-blue-600">{formatTokens(metrics.cacheReadTokens)}</div>
+              <div className="text-[9px] text-[#9f95b8] font-bold mt-0.5">Cache Read</div>
             </div>
-            <div className="text-center p-2 rounded-lg bg-[#0d0d12] border border-[rgba(255,255,255,0.04)]">
-              <div className="font-mono text-sm font-bold text-amber-400">{formatCost(metrics.estimatedCacheSavings)}</div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mt-0.5">Est. Saved</div>
+            <div className="text-center p-2 rounded-lg bg-violet-50/60 border border-violet-200/30">
+              <div className="font-mono text-sm font-bold text-violet-600">{formatCost(metrics.estimatedCacheSavings)}</div>
+              <div className="text-[9px] text-[#9f95b8] font-bold mt-0.5">Est. Saved</div>
             </div>
           </div>
         </div>
@@ -301,92 +293,88 @@ export function MetricsPanel() {
       {/* ═══ TIMELINES ═══ */}
       {tokenTimelineData.length > 1 && (
         <div className="card p-4 space-y-4">
-          <div className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">Timelines</div>
+          <div className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">Timelines</div>
 
-          {/* Token timeline */}
           <div>
-            <div className="text-[9px] text-[#3a3a42] font-bold mb-1">TOKENS OVER TIME</div>
+            <div className="text-[9px] text-[#c4b5d9] font-bold mb-1">TOKENS OVER TIME</div>
             <div className="h-24">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={tokenTimelineData}>
                   <defs>
                     <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  <Area type="monotone" dataKey="tokens" stroke="#f59e0b" fill="url(#tokenGrad)" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="tokens" stroke="#7c3aed" fill="url(#tokenGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Cost timeline */}
           {costTimelineData.length > 1 && (
             <div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mb-1">COST OVER TIME</div>
+              <div className="text-[9px] text-[#c4b5d9] font-bold mb-1">COST OVER TIME</div>
               <div className="h-24">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={costTimelineData}>
                     <defs>
                       <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
+                        <stop offset="0%" stopColor="#059669" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']} />
-                    <Area type="monotone" dataKey="cost" stroke="#22c55e" fill="url(#costGrad)" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="cost" stroke="#059669" fill="url(#costGrad)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {/* Request rate timeline */}
           {requestTimelineData.length > 1 && (
             <div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mb-1">REQUESTS OVER TIME</div>
+              <div className="text-[9px] text-[#c4b5d9] font-bold mb-1">REQUESTS OVER TIME</div>
               <div className="h-24">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={requestTimelineData}>
                     <defs>
                       <linearGradient id="reqGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={30} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Area type="monotone" dataKey="requests" stroke="#3b82f6" fill="url(#reqGrad)" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="requests" stroke="#2563eb" fill="url(#reqGrad)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {/* Latency timeline */}
           {latencyTimelineData.length > 1 && (
             <div>
-              <div className="text-[9px] text-[#3a3a42] font-bold mb-1">AVG LATENCY OVER TIME</div>
+              <div className="text-[9px] text-[#c4b5d9] font-bold mb-1">AVG LATENCY OVER TIME</div>
               <div className="h-24">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={latencyTimelineData}>
                     <defs>
                       <linearGradient id="latGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.25} />
+                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.2} />
                         <stop offset="100%" stopColor="#f97316" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}s`} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [formatDuration(v), 'Latency']} />
-                    <Area type="monotone" dataKey="latency" stroke="#f97316" fill="url(#latGrad)" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="latency" stroke="#f97316" fill="url(#latGrad)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -399,13 +387,13 @@ export function MetricsPanel() {
       {(metrics.modelPerformance || []).length > 0 && (
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Timer className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">Model Performance</span>
+            <Timer className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">Model Performance</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[10px]">
               <thead>
-                <tr className="text-[#3a3a42] font-bold uppercase tracking-wider border-b border-[rgba(255,255,255,0.05)]">
+                <tr className="text-[#9f95b8] font-bold uppercase tracking-wider border-b border-[rgba(124,58,237,0.06)]">
                   <th className="text-left py-1.5 pr-2">Model</th>
                   <th className="text-right py-1.5 px-2">Reqs</th>
                   <th className="text-right py-1.5 px-2">Avg Latency</th>
@@ -415,12 +403,12 @@ export function MetricsPanel() {
               </thead>
               <tbody>
                 {metrics.modelPerformance.slice(0, 6).map((m) => (
-                  <tr key={m.model} className="border-b border-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                    <td className="py-1.5 pr-2 font-mono text-[#8b8b96] font-medium truncate max-w-[120px]">{m.model}</td>
-                    <td className="py-1.5 px-2 text-right font-mono text-[#55555e]">{m.requests}</td>
-                    <td className="py-1.5 px-2 text-right font-mono text-blue-400">{formatDuration(m.avgDuration)}</td>
-                    <td className="py-1.5 px-2 text-right font-mono text-emerald-400">{formatCost(m.avgCost)}</td>
-                    <td className="py-1.5 px-2 text-right font-mono text-violet-400">{Math.round(m.tokensPerSec)}</td>
+                  <tr key={m.model} className="border-b border-[rgba(124,58,237,0.04)] hover:bg-violet-50/40 transition-colors">
+                    <td className="py-1.5 pr-2 font-mono text-[#4c4460] font-medium truncate max-w-[120px]">{m.model}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-[#9f95b8]">{m.requests}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-blue-600">{formatDuration(m.avgDuration)}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-emerald-600">{formatCost(m.avgCost)}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-violet-600">{Math.round(m.tokensPerSec)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -432,17 +420,16 @@ export function MetricsPanel() {
       {/* ═══ OPERATIONAL HEALTH ═══ */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">Health</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">Health</span>
         </div>
         <div className="flex items-center gap-4">
-          {/* Success rate ring */}
           <div className="relative w-20 h-20 shrink-0">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#131317" strokeWidth="8" />
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#ede9fe" strokeWidth="8" />
               <circle
                 cx="50" cy="50" r="40" fill="none"
-                stroke={successRate >= 95 ? '#22c55e' : successRate >= 80 ? '#eab308' : '#ef4444'}
+                stroke={successRate >= 95 ? '#059669' : successRate >= 80 ? '#d97706' : '#dc2626'}
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={`${successRate * 2.51} 251`}
@@ -455,22 +442,22 @@ export function MetricsPanel() {
           </div>
           <div className="flex-1 space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[#55555e]">Active Streams</span>
-              <span className="text-xs font-mono font-bold text-[#8b8b96]">{metrics.activeStreams}</span>
+              <span className="text-[10px] text-[#9f95b8]">Active Streams</span>
+              <span className="text-xs font-mono font-bold text-[#4c4460]">{metrics.activeStreams}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[#55555e]">Sessions (5m)</span>
-              <span className="text-xs font-mono font-bold text-[#8b8b96]">{metrics.activeSessions}</span>
+              <span className="text-[10px] text-[#9f95b8]">Sessions (5m)</span>
+              <span className="text-xs font-mono font-bold text-[#4c4460]">{metrics.activeSessions}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[#55555e]">Avg Cost/Req</span>
-              <span className="text-xs font-mono font-bold text-emerald-400">{formatCost(metrics.avgCostPerRequest)}</span>
+              <span className="text-[10px] text-[#9f95b8]">Avg Cost/Req</span>
+              <span className="text-xs font-mono font-bold text-emerald-600">{formatCost(metrics.avgCostPerRequest)}</span>
             </div>
             {Object.keys(metrics.errorsByCode || {}).length > 0 && (
               <div className="flex items-center gap-1 mt-1 flex-wrap">
-                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <AlertTriangle className="w-3 h-3 text-amber-500" />
                 {Object.entries(metrics.errorsByCode).map(([code, count]) => (
-                  <span key={code} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-bold border border-red-500/15">
+                  <span key={code} className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 font-bold border border-red-200/50">
                     {code}: {count}
                   </span>
                 ))}
@@ -483,21 +470,12 @@ export function MetricsPanel() {
       {/* ═══ MODEL USAGE PIE ═══ */}
       {modelData.length > 0 && (
         <div className="card p-4">
-          <div className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold mb-3">Model Usage</div>
+          <div className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold mb-3">Model Usage</div>
           <div className="flex items-center gap-4">
             <div className="h-28 w-28 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={modelData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={28}
-                    outerRadius={50}
-                    paddingAngle={3}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
+                  <Pie data={modelData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} paddingAngle={3} dataKey="value" strokeWidth={0}>
                     {modelData.map((_, i) => (
                       <Cell key={i} fill={MODEL_COLORS[i % MODEL_COLORS.length]} />
                     ))}
@@ -512,8 +490,8 @@ export function MetricsPanel() {
                     className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover:scale-125"
                     style={{ backgroundColor: MODEL_COLORS[i % MODEL_COLORS.length] }}
                   />
-                  <span className="text-[#8b8b96] truncate font-mono text-[11px] font-medium">{m.name}</span>
-                  <span className="text-[#55555e] ml-auto font-mono text-[11px] font-bold">{m.value}</span>
+                  <span className="text-[#4c4460] truncate font-mono text-[11px] font-medium">{m.name}</span>
+                  <span className="text-[#9f95b8] ml-auto font-mono text-[11px] font-bold">{m.value}</span>
                 </div>
               ))}
             </div>
@@ -524,27 +502,14 @@ export function MetricsPanel() {
       {/* ═══ COST BY PROVIDER ═══ */}
       {providerCostData.length > 0 && (
         <div className="card p-4">
-          <div className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold mb-3">Cost by Provider</div>
+          <div className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold mb-3">Cost by Provider</div>
           <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={providerCostData} layout="vertical">
-                <XAxis
-                  type="number"
-                  tick={AXIS_TICK}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: number) => `$${v.toFixed(2)}`}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: '#55555e' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={75}
-                />
+                <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#4c4460' }} axisLine={false} tickLine={false} width={75} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']} />
-                <Bar dataKey="cost" radius={[0, 4, 4, 0]} barSize={16}>
+                <Bar dataKey="cost" radius={[0, 6, 6, 0]} barSize={16}>
                   {providerCostData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -558,57 +523,31 @@ export function MetricsPanel() {
   );
 }
 
-function HeroStat({
-  value,
-  label,
-  icon,
-  color,
-}: {
-  value: string;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-}) {
+function HeroStat({ value, label, icon, color, bgColor }: { value: string; label: string; icon: React.ReactNode; color: string; bgColor: string }) {
   return (
     <div className="text-center">
-      <div className={cn('inline-flex items-center justify-center w-8 h-8 rounded-lg mb-1.5', color)}>
-        {icon}
+      <div className={cn('inline-flex items-center justify-center w-9 h-9 rounded-xl mb-1.5 border border-transparent', bgColor)}>
+        <div className={color}>{icon}</div>
       </div>
       <div className="text-lg font-mono font-bold text-foreground leading-tight text-tabular">{value}</div>
-      <div className="text-[9px] text-[#3a3a42] uppercase tracking-wider font-bold mt-0.5">{label}</div>
+      <div className="text-[9px] text-[#9f95b8] uppercase tracking-wider font-bold mt-0.5">{label}</div>
     </div>
   );
 }
 
-function SpeedCard({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
+function SpeedCard({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   const percentage = Math.min((value / max) * 100, 100);
 
   return (
     <div className="card p-4">
       <div className="flex items-center gap-2 mb-3">
         <Gauge className="w-3.5 h-3.5" style={{ color }} />
-        <span className="text-[10px] text-[#55555e] uppercase tracking-wider font-bold">{label}</span>
+        <span className="text-[10px] text-[#9f95b8] uppercase tracking-wider font-bold">{label}</span>
       </div>
       <div className="flex items-center justify-center mb-2">
         <div className="relative w-24 h-14 overflow-hidden">
           <svg viewBox="0 0 120 70" className="w-full h-full">
-            <path
-              d="M 10 65 A 50 50 0 0 1 110 65"
-              fill="none"
-              stroke="#131317"
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
+            <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#ede9fe" strokeWidth="8" strokeLinecap="round" />
             <path
               d="M 10 65 A 50 50 0 0 1 110 65"
               fill="none"
@@ -617,7 +556,7 @@ function SpeedCard({
               strokeLinecap="round"
               strokeDasharray={`${percentage * 1.57} 157`}
               className="transition-all duration-700 ease-out"
-              style={{ filter: `drop-shadow(0 0 6px ${color}40)` }}
+              style={{ filter: `drop-shadow(0 0 6px ${color}30)` }}
             />
           </svg>
         </div>

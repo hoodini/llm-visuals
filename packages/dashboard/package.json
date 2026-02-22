@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@llm-visuals/shared": "*",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.468.0",
@@ -18,6 +20,7 @@
     "react-dom": "19.2.3",
     "recharts": "^2.15.4",
     "tailwind-merge": "^2.6.1",
+    "three": "^0.183.1",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -25,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.183.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

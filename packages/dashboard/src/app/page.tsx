@@ -10,6 +10,10 @@ import { useRequestStore } from '@/hooks/use-request-store';
 import { useState } from 'react';
 import { BarChart3, Microscope, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+const ThreeBackground = dynamic(() => import('@/components/three-background'), { ssr: false });
 
 type RightPanel = 'metrics' | 'detail' | 'feed';
 
@@ -23,16 +27,17 @@ export default function Dashboard() {
   const showDetail = selectedId !== null;
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground dot-grid">
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <ThreeBackground />
       <Header />
       <div className="flex flex-1 overflow-hidden relative z-10">
-        <div className="w-[58%] border-r border-[rgba(255,255,255,0.04)] flex flex-col overflow-hidden">
+        <div className="w-[58%] border-r border-[rgba(124,58,237,0.06)] flex flex-col overflow-hidden">
           <RequestList />
         </div>
 
-        <div className="w-[42%] flex flex-col overflow-hidden bg-[#0a0a0f]/60">
+        <div className="w-[42%] flex flex-col overflow-hidden bg-white/70 backdrop-blur-sm">
           {hasRequests && (
-            <div className="flex items-center gap-0.5 px-3 py-2 border-b border-[rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-[rgba(124,58,237,0.06)]">
               {([
                 { id: 'metrics' as const, label: 'Metrics', icon: <BarChart3 className="w-3.5 h-3.5" /> },
                 { id: 'detail' as const, label: 'Inspector', icon: <Microscope className="w-3.5 h-3.5" /> },
@@ -51,10 +56,10 @@ export default function Dashboard() {
                       if (tab.id !== 'detail') useRequestStore.getState().setSelectedId(null);
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
                       isActive
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/15'
-                        : 'text-[#55555e] hover:text-[#8b8b96]'
+                        ? 'bg-violet-500/10 text-violet-600 border border-violet-500/15'
+                        : 'text-[#9f95b8] hover:text-[#4c4460] hover:bg-violet-50/50'
                     )}
                   >
                     {tab.icon}
@@ -65,15 +70,24 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="flex-1 overflow-hidden">
-            {showDetail || rightPanel === 'detail' ? (
-              <RequestDetail />
-            ) : rightPanel === 'feed' ? (
-              <div className="h-full overflow-y-auto"><ActivityFeed /></div>
-            ) : (
-              <MetricsPanel />
-            )}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={showDetail ? 'detail' : rightPanel}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="flex-1 overflow-hidden"
+            >
+              {showDetail || rightPanel === 'detail' ? (
+                <RequestDetail />
+              ) : rightPanel === 'feed' ? (
+                <div className="h-full overflow-y-auto"><ActivityFeed /></div>
+              ) : (
+                <MetricsPanel />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
