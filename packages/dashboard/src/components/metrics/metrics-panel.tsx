@@ -11,6 +11,12 @@ import {
   ArrowUp,
   ArrowDown,
   Flame,
+  TrendingUp,
+  ShieldCheck,
+  AlertTriangle,
+  Database,
+  Timer,
+  BarChart3,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -26,6 +32,18 @@ import {
   Bar,
 } from 'recharts';
 import { cn } from '@/lib/utils';
+
+const TOOLTIP_STYLE = {
+  backgroundColor: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: '12px',
+  fontSize: '11px',
+  boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+};
+
+const AXIS_TICK = { fontSize: 9, fill: '#94a3b8' };
+
+const MODEL_COLORS = ['#8b5cf6', '#ec4899', '#f97316', '#3b82f6', '#ef4444', '#eab308', '#06b6d4', '#22c55e'];
 
 export function MetricsPanel() {
   const metrics = useRequestStore((s) => s.metrics);
@@ -46,12 +64,12 @@ export function MetricsPanel() {
     );
   }
 
+  const totalTokens = metrics.totalInputTokens + metrics.totalOutputTokens;
+
   const modelData = Object.entries(metrics.modelUsage)
     .map(([name, value]) => ({ name: name || 'unknown', value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
-
-  const MODEL_COLORS = ['#8b5cf6', '#ec4899', '#f97316', '#3b82f6', '#ef4444', '#eab308', '#06b6d4', '#22c55e'];
 
   const providerCostData = Object.entries(metrics.costByProvider).map(([name, value]) => ({
     name: PROVIDER_LABELS[name] || name,
@@ -64,20 +82,36 @@ export function MetricsPanel() {
     tokens: b.value,
   }));
 
-  const totalTokens = metrics.totalInputTokens + metrics.totalOutputTokens;
+  const costTimelineData = metrics.costTimeline.map((b) => ({
+    time: new Date(b.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    cost: b.value,
+  }));
+
+  const requestTimelineData = metrics.requestTimeline.map((b) => ({
+    time: new Date(b.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    requests: b.value,
+  }));
+
+  const latencyTimelineData = (metrics.latencyTimeline || []).map((b) => ({
+    time: new Date(b.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    latency: Math.round(b.value),
+  }));
+
+  const distData = (metrics.durationDistribution || []).filter((d) => d.count > 0);
+
+  const successRate = 100 - (metrics.errorRate || 0);
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto h-full">
-      {/* Hero stats */}
+      {/* ═══ HERO STATS ═══ */}
       <div className="glass-card rounded-2xl p-5 glow-border rainbow-border">
-        <div className="grid grid-cols-3 gap-6 relative z-10">
+        <div className="grid grid-cols-4 gap-4 relative z-10">
           <HeroStat
             value={String(metrics.totalRequests)}
             label="Requests"
             icon={<Zap className="w-4 h-4" />}
             color="text-violet-500"
             bgColor="bg-violet-100"
-            glowColor="shadow-violet-500/20"
           />
           <HeroStat
             value={formatTokens(totalTokens)}
@@ -85,7 +119,6 @@ export function MetricsPanel() {
             icon={<Flame className="w-4 h-4" />}
             color="text-pink-500"
             bgColor="bg-pink-100"
-            glowColor="shadow-pink-500/20"
           />
           <HeroStat
             value={formatCost(metrics.totalCost)}
@@ -93,12 +126,18 @@ export function MetricsPanel() {
             icon={<Coins className="w-4 h-4" />}
             color="text-emerald-500"
             bgColor="bg-emerald-100"
-            glowColor="shadow-emerald-500/20"
+          />
+          <HeroStat
+            value={`${formatCost(metrics.costBurnRate)}/h`}
+            label="Burn Rate"
+            icon={<TrendingUp className="w-4 h-4" />}
+            color="text-amber-500"
+            bgColor="bg-amber-100"
           />
         </div>
       </div>
 
-      {/* Speed + Latency */}
+      {/* ═══ THROUGHPUT + LATENCY ═══ */}
       <div className="grid grid-cols-2 gap-3">
         <SpeedCard
           label="Tokens/sec"
@@ -106,31 +145,90 @@ export function MetricsPanel() {
           max={200}
           color="#8b5cf6"
         />
-        <div className="glass-card rounded-xl p-4 glow-border">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-blue-50">
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Latency</span>
+        <SpeedCard
+          label="Req/min"
+          value={Math.round(metrics.requestsPerMinute * 10) / 10}
+          max={20}
+          color="#ec4899"
+        />
+      </div>
+
+      {/* ═══ LATENCY PERCENTILES ═══ */}
+      <div className="glass-card rounded-xl p-4 glow-border">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 rounded-lg bg-blue-50">
+            <Clock className="w-3.5 h-3.5 text-blue-500" />
           </div>
-          <div className="space-y-2.5">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-slate-400 font-medium">TTFB</span>
-              <span className="font-mono text-sm font-bold text-blue-600">{formatDuration(metrics.avgTTFB)}</span>
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Latency Percentiles</span>
+          <span className="ml-auto text-[9px] text-slate-300 font-mono">last 5 min</span>
+        </div>
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {[
+            { label: 'TTFB', value: metrics.avgTTFB, color: 'text-sky-600' },
+            { label: 'P50', value: metrics.p50Duration, color: 'text-emerald-600' },
+            { label: 'P90', value: metrics.p90Duration, color: 'text-amber-600' },
+            { label: 'P99', value: metrics.p99Duration, color: 'text-red-500' },
+          ].map((p) => (
+            <div key={p.label} className="text-center p-2 rounded-lg bg-slate-50/80">
+              <div className={cn('font-mono text-sm font-bold', p.color)}>{formatDuration(p.value)}</div>
+              <div className="text-[9px] text-slate-400 font-bold mt-0.5">{p.label}</div>
             </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-slate-400 font-medium">Avg</span>
-              <span className="font-mono text-sm font-bold text-slate-700">{formatDuration(metrics.avgDuration)}</span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-slate-400 font-medium">P95</span>
-              <span className="font-mono text-sm font-bold text-amber-600">{formatDuration(metrics.p95Duration)}</span>
-            </div>
-          </div>
+          ))}
+        </div>
+        {/* Full percentile bar */}
+        <div className="space-y-1">
+          {[
+            { label: 'P50', value: metrics.p50Duration, pct: 50 },
+            { label: 'P75', value: metrics.p75Duration, pct: 75 },
+            { label: 'P90', value: metrics.p90Duration, pct: 90 },
+            { label: 'P95', value: metrics.p95Duration, pct: 95 },
+            { label: 'P99', value: metrics.p99Duration, pct: 99 },
+          ].map((p) => {
+            const maxD = metrics.maxDuration || 1;
+            const width = Math.min((p.value / maxD) * 100, 100);
+            return (
+              <div key={p.label} className="flex items-center gap-2">
+                <span className="text-[9px] text-slate-400 w-6 font-mono font-bold">{p.label}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500 transition-all duration-500"
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+                <span className="text-[9px] text-slate-500 w-12 text-right font-mono">{formatDuration(p.value)}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Token I/O */}
+      {/* ═══ DURATION HISTOGRAM ═══ */}
+      {distData.length > 0 && (
+        <div className="glass-card rounded-xl p-4 glow-border">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-violet-50">
+              <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
+            </div>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Duration Distribution</span>
+          </div>
+          <div className="h-28">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={distData}>
+                <XAxis dataKey="bucket" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={30} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={20}>
+                  {distData.map((_, i) => (
+                    <Cell key={i} fill={i < 2 ? '#22c55e' : i < 4 ? '#eab308' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TOKEN FLOW ═══ */}
       <div className="glass-card rounded-xl p-4 glow-border">
         <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Token Flow</div>
         <div className="grid grid-cols-2 gap-4">
@@ -139,10 +237,10 @@ export function MetricsPanel() {
               <ArrowUp className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-xl font-mono font-bold text-slate-800 animate-count-up">
-                {formatTokens(metrics.totalInputTokens)}
+              <div className="text-lg font-mono font-bold text-slate-800">{formatTokens(metrics.totalInputTokens)}</div>
+              <div className="text-[10px] text-slate-400">
+                Input <span className="text-slate-300">({formatTokens(metrics.avgInputTokensPerReq)}/req)</span>
               </div>
-              <div className="text-[10px] text-slate-400">Input tokens sent</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -150,16 +248,16 @@ export function MetricsPanel() {
               <ArrowDown className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-xl font-mono font-bold text-slate-800 animate-count-up">
-                {formatTokens(metrics.totalOutputTokens)}
+              <div className="text-lg font-mono font-bold text-slate-800">{formatTokens(metrics.totalOutputTokens)}</div>
+              <div className="text-[10px] text-slate-400">
+                Output <span className="text-slate-300">({formatTokens(metrics.avgOutputTokensPerReq)}/req)</span>
               </div>
-              <div className="text-[10px] text-slate-400">Output tokens received</div>
             </div>
           </div>
         </div>
         {/* Ratio bar */}
         {totalTokens > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <div className="h-3 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
               <div
                 className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-l-full transition-all duration-700"
@@ -170,9 +268,12 @@ export function MetricsPanel() {
                 style={{ width: `${(metrics.totalOutputTokens / totalTokens) * 100}%` }}
               />
             </div>
-            <div className="flex justify-between mt-1.5">
+            <div className="flex justify-between mt-1">
               <span className="text-[10px] text-blue-500 font-bold">
                 {Math.round((metrics.totalInputTokens / totalTokens) * 100)}% in
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">
+                efficiency: {metrics.tokenEfficiency.toFixed(2)}x
               </span>
               <span className="text-[10px] text-violet-500 font-bold">
                 {Math.round((metrics.totalOutputTokens / totalTokens) * 100)}% out
@@ -182,54 +283,219 @@ export function MetricsPanel() {
         )}
       </div>
 
-      {/* Token timeline */}
-      {tokenTimelineData.length > 1 && (
+      {/* ═══ CACHE ECONOMICS ═══ */}
+      {(metrics.cacheReadTokens > 0 || metrics.cacheCreationTokens > 0) && (
         <div className="glass-card rounded-xl p-4 glow-border">
-          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Tokens Over Time</div>
-          <div className="h-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={tokenTimelineData}>
-                <defs>
-                  <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#ec4899" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="time"
-                  tick={{ fontSize: 9, fill: '#94a3b8' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: '#94a3b8' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={45}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="tokens"
-                  stroke="#8b5cf6"
-                  fill="url(#tokenGrad)"
-                  strokeWidth={2.5}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-amber-50">
+              <Database className="w-3.5 h-3.5 text-amber-500" />
+            </div>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Cache Economics</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-2 rounded-lg bg-emerald-50/80">
+              <div className="font-mono text-sm font-bold text-emerald-600">{metrics.cacheHitRate.toFixed(0)}%</div>
+              <div className="text-[9px] text-slate-400 font-bold mt-0.5">Hit Rate</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-blue-50/80">
+              <div className="font-mono text-sm font-bold text-blue-600">{formatTokens(metrics.cacheReadTokens)}</div>
+              <div className="text-[9px] text-slate-400 font-bold mt-0.5">Cache Read</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-amber-50/80">
+              <div className="font-mono text-sm font-bold text-amber-600">{formatCost(metrics.estimatedCacheSavings)}</div>
+              <div className="text-[9px] text-slate-400 font-bold mt-0.5">Est. Saved</div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Model usage pie */}
+      {/* ═══ TIMELINES ═══ */}
+      {tokenTimelineData.length > 1 && (
+        <div className="glass-card rounded-xl p-4 glow-border space-y-4">
+          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Timelines</div>
+
+          {/* Token timeline */}
+          <div>
+            <div className="text-[9px] text-slate-300 font-bold mb-1">TOKENS OVER TIME</div>
+            <div className="h-24">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={tokenTimelineData}>
+                  <defs>
+                    <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#ec4899" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Area type="monotone" dataKey="tokens" stroke="#8b5cf6" fill="url(#tokenGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Cost timeline */}
+          {costTimelineData.length > 1 && (
+            <div>
+              <div className="text-[9px] text-slate-300 font-bold mb-1">COST OVER TIME</div>
+              <div className="h-24">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={costTimelineData}>
+                    <defs>
+                      <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']} />
+                    <Area type="monotone" dataKey="cost" stroke="#22c55e" fill="url(#costGrad)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Request rate timeline */}
+          {requestTimelineData.length > 1 && (
+            <div>
+              <div className="text-[9px] text-slate-300 font-bold mb-1">REQUESTS OVER TIME</div>
+              <div className="h-24">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={requestTimelineData}>
+                    <defs>
+                      <linearGradient id="reqGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={30} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Area type="monotone" dataKey="requests" stroke="#3b82f6" fill="url(#reqGrad)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Latency timeline */}
+          {latencyTimelineData.length > 1 && (
+            <div>
+              <div className="text-[9px] text-slate-300 font-bold mb-1">AVG LATENCY OVER TIME</div>
+              <div className="h-24">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={latencyTimelineData}>
+                    <defs>
+                      <linearGradient id="latGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#f97316" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="time" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}s`} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [formatDuration(v), 'Latency']} />
+                    <Area type="monotone" dataKey="latency" stroke="#f97316" fill="url(#latGrad)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ MODEL PERFORMANCE TABLE ═══ */}
+      {(metrics.modelPerformance || []).length > 0 && (
+        <div className="glass-card rounded-xl p-4 glow-border">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-indigo-50">
+              <Timer className="w-3.5 h-3.5 text-indigo-500" />
+            </div>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Model Performance</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr className="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100">
+                  <th className="text-left py-1.5 pr-2">Model</th>
+                  <th className="text-right py-1.5 px-2">Reqs</th>
+                  <th className="text-right py-1.5 px-2">Avg Latency</th>
+                  <th className="text-right py-1.5 px-2">Avg Cost</th>
+                  <th className="text-right py-1.5 px-2">Tok/s</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.modelPerformance.slice(0, 6).map((m) => (
+                  <tr key={m.model} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="py-1.5 pr-2 font-mono text-slate-700 font-medium truncate max-w-[120px]">{m.model}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-slate-500">{m.requests}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-blue-600">{formatDuration(m.avgDuration)}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-emerald-600">{formatCost(m.avgCost)}</td>
+                    <td className="py-1.5 px-2 text-right font-mono text-violet-600">{Math.round(m.tokensPerSec)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ OPERATIONAL HEALTH ═══ */}
+      <div className="glass-card rounded-xl p-4 glow-border">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 rounded-lg bg-emerald-50">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          </div>
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Health</span>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* Success rate ring */}
+          <div className="relative w-20 h-20 shrink-0">
+            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+              <circle
+                cx="50" cy="50" r="40" fill="none"
+                stroke={successRate >= 95 ? '#22c55e' : successRate >= 80 ? '#eab308' : '#ef4444'}
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={`${successRate * 2.51} 251`}
+                className="transition-all duration-700"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-mono font-bold text-slate-700">{successRate.toFixed(0)}%</span>
+            </div>
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">Active Streams</span>
+              <span className="text-xs font-mono font-bold text-slate-600">{metrics.activeStreams}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">Sessions (5m)</span>
+              <span className="text-xs font-mono font-bold text-slate-600">{metrics.activeSessions}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">Avg Cost/Req</span>
+              <span className="text-xs font-mono font-bold text-emerald-600">{formatCost(metrics.avgCostPerRequest)}</span>
+            </div>
+            {Object.keys(metrics.errorsByCode || {}).length > 0 && (
+              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                <AlertTriangle className="w-3 h-3 text-amber-500" />
+                {Object.entries(metrics.errorsByCode).map(([code, count]) => (
+                  <span key={code} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold">
+                    {code}: {count}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ MODEL USAGE PIE ═══ */}
       {modelData.length > 0 && (
         <div className="glass-card rounded-xl p-4 glow-border">
           <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Model Usage</div>
@@ -270,7 +536,7 @@ export function MetricsPanel() {
         </div>
       )}
 
-      {/* Cost by provider */}
+      {/* ═══ COST BY PROVIDER ═══ */}
       {providerCostData.length > 0 && (
         <div className="glass-card rounded-xl p-4 glow-border">
           <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3">Cost by Provider</div>
@@ -279,7 +545,7 @@ export function MetricsPanel() {
               <BarChart data={providerCostData} layout="vertical">
                 <XAxis
                   type="number"
-                  tick={{ fontSize: 9, fill: '#94a3b8' }}
+                  tick={AXIS_TICK}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v.toFixed(2)}`}
@@ -292,16 +558,7 @@ export function MetricsPanel() {
                   tickLine={false}
                   width={75}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
-                  }}
-                  formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']}
-                />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}`, 'Cost']} />
                 <Bar dataKey="cost" radius={[0, 8, 8, 0]} barSize={16}>
                   {providerCostData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -322,22 +579,20 @@ function HeroStat({
   icon,
   color,
   bgColor,
-  glowColor,
 }: {
   value: string;
   label: string;
   icon: React.ReactNode;
   color: string;
   bgColor: string;
-  glowColor: string;
 }) {
   return (
     <div className="text-center">
-      <div className={cn('inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2 shadow-lg', bgColor, glowColor)}>
+      <div className={cn('inline-flex items-center justify-center w-9 h-9 rounded-xl mb-1.5 shadow-md', bgColor)}>
         <div className={color}>{icon}</div>
       </div>
-      <div className="text-2xl font-mono font-bold text-slate-800 animate-count-up">{value}</div>
-      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">{label}</div>
+      <div className="text-lg font-mono font-bold text-slate-800 leading-tight">{value}</div>
+      <div className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mt-0.5">{label}</div>
     </div>
   );
 }
@@ -363,8 +618,6 @@ function SpeedCard({
         </div>
         <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">{label}</span>
       </div>
-
-      {/* Mini gauge */}
       <div className="flex items-center justify-center mb-2">
         <div className="relative w-24 h-14 overflow-hidden">
           <svg viewBox="0 0 120 70" className="w-full h-full">
@@ -383,17 +636,13 @@ function SpeedCard({
               strokeLinecap="round"
               strokeDasharray={`${percentage * 1.57} 157`}
               className="transition-all duration-700 ease-out"
-              style={{
-                filter: `drop-shadow(0 0 8px ${color}50)`,
-              }}
+              style={{ filter: `drop-shadow(0 0 8px ${color}50)` }}
             />
           </svg>
         </div>
       </div>
-
       <div className="text-center">
         <span className="text-xl font-mono font-bold text-slate-800">{value}</span>
-        <span className="text-xs text-slate-400 ml-1 font-medium">tok/s</span>
       </div>
     </div>
   );

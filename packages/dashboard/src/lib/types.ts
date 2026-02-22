@@ -82,26 +82,72 @@ export interface ToolDefinition {
 export interface MetricsSnapshot {
   totalRequests: number;
   activeStreams: number;
+
   avgTTFB: number;
   avgDuration: number;
+  p50Duration: number;
+  p75Duration: number;
+  p90Duration: number;
   p95Duration: number;
+  p99Duration: number;
+  minDuration: number;
+  maxDuration: number;
+  durationDistribution: DistributionBucket[];
+
+  requestsPerMinute: number;
+  avgTokensPerSecond: number;
+
   totalInputTokens: number;
   totalOutputTokens: number;
-  avgTokensPerSecond: number;
+  avgInputTokensPerReq: number;
+  avgOutputTokensPerReq: number;
+  tokenEfficiency: number;
+
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  cacheHitRate: number;
+  estimatedCacheSavings: number;
+
   totalCost: number;
+  avgCostPerRequest: number;
+  costBurnRate: number;
+  tokenBurnRate: number;
   costByProvider: Record<string, number>;
   costByModel: Record<string, number>;
+  costPerKTokenByModel: Record<string, number>;
+
+  errorRate: number;
+  errorsByCode: Record<string, number>;
+
   modelUsage: Record<string, number>;
   providerUsage: Record<string, number>;
+  modelPerformance: ModelPerformanceRow[];
+
   tokenTimeline: TimelineBucket[];
   requestTimeline: TimelineBucket[];
   costTimeline: TimelineBucket[];
+  latencyTimeline: TimelineBucket[];
+
   activeSessions: number;
 }
 
 export interface TimelineBucket {
   timestamp: number;
   value: number;
+}
+
+export interface DistributionBucket {
+  bucket: string;
+  count: number;
+}
+
+export interface ModelPerformanceRow {
+  model: string;
+  requests: number;
+  avgDuration: number;
+  avgCost: number;
+  avgTokens: number;
+  tokensPerSec: number;
 }
 
 export type WSMessage =
