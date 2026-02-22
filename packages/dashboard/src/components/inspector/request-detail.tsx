@@ -11,9 +11,10 @@ import {
   PROVIDER_COLORS,
   PROVIDER_LABELS,
 } from '@/lib/utils';
-import { X, Clock, Coins, Zap, FileText, Wrench, MessageSquare, Code2, Microscope } from 'lucide-react';
+import { X, Clock, Coins, Zap, FileText, Wrench, MessageSquare, Code2, Microscope, Layers, Database } from 'lucide-react';
+import { ContextViewer } from './context-viewer';
 
-type Tab = 'overview' | 'request' | 'response' | 'system' | 'tools' | 'headers';
+type Tab = 'overview' | 'context' | 'request' | 'response' | 'system' | 'tools' | 'headers';
 
 export function RequestDetail() {
   const selectedId = useRequestStore((s) => s.selectedId);
@@ -40,13 +41,15 @@ export function RequestDetail() {
 
   const isStreaming = !request.completedAt && request.isStreaming;
   const providerColor = PROVIDER_COLORS[request.provider];
+  const msgCount = request.parsedMessages?.length || request.totalMessageCount || 0;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Zap className="w-3.5 h-3.5" /> },
+    { id: 'context', label: `Context (${msgCount})`, icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'system', label: 'System', icon: <FileText className="w-3.5 h-3.5" /> },
     { id: 'request', label: 'Request', icon: <Code2 className="w-3.5 h-3.5" /> },
     { id: 'response', label: 'Response', icon: <MessageSquare className="w-3.5 h-3.5" /> },
-    { id: 'tools', label: `Tools (${request.tools.length})`, icon: <Wrench className="w-3.5 h-3.5" /> },
+    { id: 'tools', label: `Tools (${request.tools?.length || 0})`, icon: <Wrench className="w-3.5 h-3.5" /> },
     { id: 'headers', label: 'Headers', icon: <Code2 className="w-3.5 h-3.5" /> },
   ];
 
@@ -137,6 +140,60 @@ export function RequestDetail() {
               />
             </div>
 
+            {/* Cache info */}
+            {(request.cacheReadTokens > 0 || request.cacheCreationTokens > 0) && (
+              <div className="glass-card rounded-xl p-3 border border-yellow-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Database className="w-3.5 h-3.5 text-yellow-400" />
+                  <span className="text-[10px] text-yellow-400 uppercase tracking-wider font-medium">Cache</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {request.cacheReadTokens > 0 && (
+                    <div>
+                      <div className="text-[10px] text-zinc-500">Cache Read</div>
+                      <div className="text-sm font-mono text-yellow-300">{formatTokens(request.cacheReadTokens)}</div>
+                    </div>
+                  )}
+                  {request.cacheCreationTokens > 0 && (
+                    <div>
+                      <div className="text-[10px] text-zinc-500">Cache Write</div>
+                      <div className="text-sm font-mono text-yellow-300">{formatTokens(request.cacheCreationTokens)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Context summary */}
+            {msgCount > 0 && (
+              <div className="glass-card rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-zinc-500">Context Chain</div>
+                  <button
+                    onClick={() => setTab('context')}
+                    className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    View full chain →
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="text-sm font-mono text-zinc-200">{msgCount} messages</span>
+                  {request.hasToolUse && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Tool Use</span>
+                  )}
+                  {request.hasThinkingBlocks && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-pink-500/10 text-pink-400 border border-pink-500/20">Thinking</span>
+                  )}
+                  {request.hasImages && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/20">Images</span>
+                  )}
+                  {request.hasCacheControl && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Cached</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Path */}
             <div className="glass-card rounded-xl p-3">
               <div className="text-xs text-zinc-500 mb-1">Endpoint</div>
@@ -157,12 +214,19 @@ export function RequestDetail() {
           </div>
         )}
 
+        {tab === 'context' && (
+          <ContextViewer request={request} />
+        )}
+
         {tab === 'system' && (
           <div className="space-y-3">
             {request.systemPrompt ? (
               <div className="glass-card rounded-xl border-l-2 border-amber-500/50">
                 <div className="px-4 py-2 border-b border-zinc-800">
                   <span className="text-xs text-amber-400 font-medium">System Prompt</span>
+                  <span className="text-[10px] text-zinc-600 ml-2">
+                    {request.systemPrompt.length.toLocaleString()} chars
+                  </span>
                 </div>
                 <pre className="p-4 text-sm text-zinc-300 whitespace-pre-wrap break-words overflow-x-auto font-mono leading-relaxed">
                   {request.systemPrompt}
@@ -196,7 +260,7 @@ export function RequestDetail() {
 
         {tab === 'tools' && (
           <div className="space-y-3">
-            {request.tools.length === 0 ? (
+            {!request.tools || request.tools.length === 0 ? (
               <div className="text-sm text-zinc-600 text-center py-8">No tools defined</div>
             ) : (
               request.tools.map((tool, i) => (

@@ -60,6 +60,22 @@ export function RequestRow({ record: r, index }: { record: RequestRecord; index:
         {r.model || 'unknown'}
       </span>
 
+      {/* Context badges */}
+      <div className="flex items-center gap-1 shrink-0">
+        {r.totalMessageCount > 0 && (
+          <span className="text-[9px] text-zinc-600 font-mono">{r.totalMessageCount}msg</span>
+        )}
+        {r.hasThinkingBlocks && (
+          <span className="w-1.5 h-1.5 rounded-full bg-pink-400" title="Thinking" />
+        )}
+        {r.hasToolUse && (
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Tool Use" />
+        )}
+        {r.hasCacheControl && (
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" title="Cache" />
+        )}
+      </div>
+
       {/* Path - subtle */}
       <span className="text-[10px] text-zinc-700 font-mono truncate flex-1 min-w-0">
         {r.path}

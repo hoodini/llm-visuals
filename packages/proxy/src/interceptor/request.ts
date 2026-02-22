@@ -1,11 +1,14 @@
 import type { IncomingMessage } from 'node:http';
+import type { ProviderSlug } from '@llm-visuals/shared';
 import {
   extractSystemPrompt,
   extractTools,
   extractModel,
   extractMessages,
   redactHeaders,
+  parseMessagesRich,
 } from '@llm-visuals/shared';
+import type { ParsedMessage } from '@llm-visuals/shared';
 
 export interface CapturedRequest {
   raw: string;
@@ -14,10 +17,11 @@ export interface CapturedRequest {
   tools: any[];
   model: string;
   messages: unknown[];
+  parsedMessages: ParsedMessage[];
   redactedHeaders: Record<string, string>;
 }
 
-export function captureRequestBody(req: IncomingMessage): Promise<CapturedRequest> {
+export function captureRequestBody(req: IncomingMessage, provider: ProviderSlug): Promise<CapturedRequest> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = [];
     req.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -42,6 +46,7 @@ export function captureRequestBody(req: IncomingMessage): Promise<CapturedReques
         tools: extractTools(parsed),
         model: extractModel(parsed),
         messages: extractMessages(parsed),
+        parsedMessages: parseMessagesRich(parsed, provider),
         redactedHeaders: redactHeaders(headers),
       });
     });

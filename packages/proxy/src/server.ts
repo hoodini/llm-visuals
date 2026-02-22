@@ -5,7 +5,6 @@ import { nanoid } from 'nanoid';
 import {
   createEmptyRecord,
   calculateCost,
-  redactHeaders,
   type ProviderSlug,
   type RequestRecord,
 } from '@llm-visuals/shared';
@@ -75,14 +74,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Capture request body
-  const captured = await captureRequestBody(req);
+  // Capture request body with provider context for rich parsing
+  const captured = await captureRequestBody(req, provider.slug);
   const requestId = nanoid(12);
 
   // Strip provider prefix from path
   const upstreamPath = '/' + segments.slice(1).join('/') + url.search;
 
-  // Create record
+  // Create record with full context
   const record = createEmptyRecord(requestId, provider.slug);
   record.path = upstreamPath;
   record.url = provider.upstream + upstreamPath;
@@ -94,6 +93,20 @@ const server = http.createServer(async (req, res) => {
   record.tools = captured.tools;
   record.messages = captured.messages;
   record.isStreaming = provider.isStreaming(captured.parsed, upstreamPath);
+
+  // Rich context: parsed message chain
+  record.parsedMessages = captured.parsedMessages;
+  record.totalMessageCount = captured.parsedMessages.length;
+  record.hasCacheControl = captured.parsedMessages.some((m) => !!m.cacheControl);
+  record.hasThinkingBlocks = captured.parsedMessages.some((m) =>
+    m.contentBlocks.some((b) => b.type === 'thinking')
+  );
+  record.hasToolUse = captured.parsedMessages.some((m) =>
+    m.contentBlocks.some((b) => b.type === 'tool_use' || b.type === 'tool_result')
+  );
+  record.hasImages = captured.parsedMessages.some((m) =>
+    m.contentBlocks.some((b) => b.type === 'image')
+  );
 
   storage.save(record);
   broadcaster.send({ type: 'request:start', data: record });
@@ -145,13 +158,15 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
         record.fullResponseText = result.fullText;
         record.inputTokens = result.inputTokens || record.inputTokens;
         record.outputTokens = result.outputTokens;
+        record.cacheReadTokens = result.cacheReadTokens || 0;
+        record.cacheCreationTokens = result.cacheCreationTokens || 0;
+        record.responseBlocks = result.responseBlocks;
         if (result.model) record.model = result.model;
         record.completedAt = Date.now();
         record.duration = record.completedAt - record.startedAt;
         record.firstByteAt = transform.firstByteTime;
         record.ttfb = record.firstByteAt ? record.firstByteAt - record.startedAt : null;
 
-        // tokens/sec for streaming
         const streamDuration = record.duration / 1000;
         if (streamDuration > 0 && record.outputTokens > 0) {
           record.tokensPerSecond = Math.round(record.outputTokens / streamDuration);
@@ -167,7 +182,6 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
         storage.save(record);
         broadcaster.send({ type: 'request:complete', data: record });
 
-        // Push updated metrics
         const metrics = computeMetrics(storage.getAllRecords());
         broadcaster.send({ type: 'metrics:update', data: metrics });
       },
@@ -186,25 +200,32 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
       record.responseBody = body;
       record.completedAt = Date.now();
       record.duration = record.completedAt - record.startedAt;
-      record.ttfb = record.duration; // Non-streaming: TTFB ≈ total
+      record.ttfb = record.duration;
 
-      // Try extracting token usage from non-streaming response
       try {
         const parsed = JSON.parse(body);
-        // Anthropic non-streaming
         if (parsed.usage) {
           record.inputTokens = parsed.usage.input_tokens || parsed.usage.prompt_tokens || 0;
           record.outputTokens = parsed.usage.output_tokens || parsed.usage.completion_tokens || 0;
+          record.cacheReadTokens = parsed.usage.cache_read_input_tokens || 0;
+          record.cacheCreationTokens = parsed.usage.cache_creation_input_tokens || 0;
         }
         if (parsed.model) record.model = parsed.model;
-        // Extract response text
+        // Extract response text and blocks
         if (parsed.content) {
           record.fullResponseText = parsed.content
             .filter((c: any) => c.type === 'text')
             .map((c: any) => c.text)
             .join('');
+          record.responseBlocks = parsed.content.map((c: any) => {
+            if (c.type === 'text') return { type: 'text' as const, text: c.text };
+            if (c.type === 'thinking') return { type: 'thinking' as const, thinkingText: c.thinking || c.text };
+            if (c.type === 'tool_use') return { type: 'tool_use' as const, toolName: c.name, toolId: c.id, toolInput: JSON.stringify(c.input, null, 2) };
+            return { type: 'other' as const, text: JSON.stringify(c) };
+          });
         } else if (parsed.choices?.[0]?.message?.content) {
           record.fullResponseText = parsed.choices[0].message.content;
+          record.responseBlocks = [{ type: 'text', text: parsed.choices[0].message.content }];
         }
       } catch {
         record.fullResponseText = body;

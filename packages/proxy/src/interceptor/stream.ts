@@ -3,6 +3,7 @@ import {
   SSEParser,
   type SSEEvent,
   type ProviderSlug,
+  type ResponseBlock,
   assembleAnthropicResponse,
   assembleOpenAIResponse,
   assembleGeminiResponse,
@@ -13,6 +14,9 @@ export interface AssembledStreamResult {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  responseBlocks: ResponseBlock[];
 }
 
 export class SSEInterceptTransform extends Transform {
@@ -30,7 +34,6 @@ export class SSEInterceptTransform extends Transform {
     this.parser = new SSEParser({
       onEvent: (event) => {
         this.events.push(event);
-        // Extract text delta for live streaming to dashboard
         const text = this.extractTextDelta(event);
         if (text) {
           this.onChunk({
@@ -72,17 +75,41 @@ export class SSEInterceptTransform extends Transform {
     switch (this.providerType) {
       case 'anthropic': {
         const a = assembleAnthropicResponse(this.events);
-        result = { fullText: a.fullText, model: a.model, inputTokens: a.inputTokens, outputTokens: a.outputTokens };
+        result = {
+          fullText: a.fullText,
+          model: a.model,
+          inputTokens: a.inputTokens,
+          outputTokens: a.outputTokens,
+          cacheReadTokens: a.cacheReadTokens,
+          cacheCreationTokens: a.cacheCreationTokens,
+          responseBlocks: a.responseBlocks,
+        };
         break;
       }
       case 'openai': {
         const o = assembleOpenAIResponse(this.events);
-        result = { fullText: o.fullText, model: o.model, inputTokens: o.inputTokens, outputTokens: o.outputTokens };
+        result = {
+          fullText: o.fullText,
+          model: o.model,
+          inputTokens: o.inputTokens,
+          outputTokens: o.outputTokens,
+          cacheReadTokens: 0,
+          cacheCreationTokens: 0,
+          responseBlocks: o.fullText ? [{ type: 'text', text: o.fullText }] : [],
+        };
         break;
       }
       case 'gemini': {
         const g = assembleGeminiResponse(this.events);
-        result = { fullText: g.fullText, model: g.model, inputTokens: g.inputTokens, outputTokens: g.outputTokens };
+        result = {
+          fullText: g.fullText,
+          model: g.model,
+          inputTokens: g.inputTokens,
+          outputTokens: g.outputTokens,
+          cacheReadTokens: 0,
+          cacheCreationTokens: 0,
+          responseBlocks: g.fullText ? [{ type: 'text', text: g.fullText }] : [],
+        };
         break;
       }
     }
@@ -94,9 +121,7 @@ export class SSEInterceptTransform extends Transform {
     if (!this._firstByteTime) {
       this._firstByteTime = Date.now();
     }
-    // Forward unchanged to client
     this.push(chunk);
-    // Feed to parser for recording
     this.parser.feed(chunk.toString('utf-8'));
     callback();
   }
