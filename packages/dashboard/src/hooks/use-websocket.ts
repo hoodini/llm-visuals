@@ -10,14 +10,13 @@ export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setHistory = useRequestStore((s) => s.setHistory);
-  const addRequest = useRequestStore((s) => s.addRequest);
-  const updateRequest = useRequestStore((s) => s.updateRequest);
-  const addStreamChunk = useRequestStore((s) => s.addStreamChunk);
-  const setMetrics = useRequestStore((s) => s.setMetrics);
-  const setWsStatus = useRequestStore((s) => s.setWsStatus);
-
   useEffect(() => {
+    // Use getState() instead of selectors — this hook only WRITES to the store,
+    // so subscribing via selectors is unnecessary and causes an infinite loop
+    // with Zustand v5 + React 19's useSyncExternalStore.
+    const { setHistory, addRequest, updateRequest, addStreamChunk, setMetrics, setWsStatus } =
+      useRequestStore.getState();
+
     function connect() {
       setWsStatus('connecting');
 
@@ -71,5 +70,5 @@ export function useWebSocket() {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
     };
-  }, [setHistory, addRequest, updateRequest, addStreamChunk, setMetrics, setWsStatus]);
+  }, []);
 }
