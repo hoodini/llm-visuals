@@ -11,106 +11,83 @@ export function RequestRow({ record: r, index }: { record: RequestRecord; index:
   const isSelected = selectedId === r.id;
 
   const statusColor =
-    r.statusCode === null
-      ? 'text-amber-500'
-      : r.statusCode >= 200 && r.statusCode < 300
-        ? 'text-emerald-500'
-        : r.statusCode >= 400
-          ? 'text-red-500'
-          : 'text-slate-500';
+    r.statusCode === null ? 'text-amber-400'
+    : r.statusCode >= 200 && r.statusCode < 300 ? 'text-emerald-400'
+    : r.statusCode >= 400 ? 'text-red-400'
+    : 'text-[#55555e]';
 
-  const providerColor = PROVIDER_COLORS[r.provider] || '#71717a';
+  const providerColor = PROVIDER_COLORS[r.provider] || '#55555e';
 
   return (
     <button
       onClick={() => setSelectedId(isSelected ? null : r.id)}
       className={cn(
-        'w-full text-left px-4 py-2.5 border-b border-slate-100 transition-all duration-200 flex items-center gap-3 group',
+        'w-full text-left px-4 py-2 border-b border-[rgba(255,255,255,0.025)] transition-all flex items-center gap-3 group',
         index === 0 && 'animate-slide-in',
-        isSelected && 'bg-violet-50 border-l-[3px] border-l-violet-500 shadow-inner shadow-violet-500/5',
-        !isSelected && 'hover:bg-slate-50/80',
-        isStreaming && !isSelected && 'animate-shimmer'
+        isSelected && 'bg-amber-500/[0.04] border-l-2 border-l-amber-400',
+        !isSelected && 'hover:bg-[rgba(255,255,255,0.015)]',
+        isStreaming && !isSelected && 'stream-line'
       )}
     >
-      {/* Status dot */}
+      {/* Status */}
       <div className="shrink-0 w-6 flex justify-center">
         {r.statusCode === null ? (
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse-dot shadow-sm shadow-amber-400/50" />
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse-dot" />
         ) : (
-          <span className={cn('font-mono text-[11px] font-bold', statusColor)}>
-            {r.statusCode}
-          </span>
+          <span className={cn('font-mono text-[11px] font-medium text-tabular', statusColor)}>{r.statusCode}</span>
         )}
       </div>
 
-      {/* Provider badge */}
-      <div
-        className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm"
-        style={{
-          backgroundColor: `${providerColor}18`,
-          border: `1px solid ${providerColor}30`,
-          color: providerColor,
-        }}
+      {/* Provider */}
+      <span
+        className="text-[10px] font-bold uppercase tracking-wider shrink-0 w-8 text-tabular"
+        style={{ color: providerColor }}
       >
         {r.provider === 'anthropic' ? 'ANT' : r.provider === 'openai' ? 'OAI' : 'GEM'}
-      </div>
+      </span>
 
-      {/* Model name */}
-      <span className="text-[11px] text-slate-700 font-mono font-medium truncate min-w-0 max-w-[160px]">
+      {/* Model */}
+      <span className="text-[11px] text-[#8b8b96] font-mono truncate min-w-0 max-w-[160px]">
         {r.model || 'unknown'}
       </span>
 
-      {/* Context badges */}
+      {/* Context dots */}
       <div className="flex items-center gap-1 shrink-0">
-        {r.totalMessageCount > 0 && (
-          <span className="text-[9px] text-slate-400 font-mono">{r.totalMessageCount}msg</span>
-        )}
-        {r.hasThinkingBlocks && (
-          <span className="w-1.5 h-1.5 rounded-full bg-pink-400 shadow-sm shadow-pink-400/50" title="Thinking" />
-        )}
-        {r.hasToolUse && (
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" title="Tool Use" />
-        )}
-        {r.hasCacheControl && (
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" title="Cache" />
-        )}
+        {r.totalMessageCount > 0 && <span className="text-[9px] text-[#3a3a42] font-mono">{r.totalMessageCount}m</span>}
+        {r.hasThinkingBlocks && <span className="w-1 h-1 rounded-full bg-pink-400/70" />}
+        {r.hasToolUse && <span className="w-1 h-1 rounded-full bg-emerald-400/70" />}
+        {r.hasCacheControl && <span className="w-1 h-1 rounded-full bg-amber-400/70" />}
       </div>
 
       {/* Path */}
-      <span className="text-[10px] text-slate-300 font-mono truncate flex-1 min-w-0">
-        {r.path}
-      </span>
+      <span className="text-[10px] text-[#2a2a32] font-mono truncate flex-1 min-w-0">{r.path}</span>
 
-      {/* Streaming indicator */}
+      {/* Streaming */}
       {isStreaming && (
-        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 shadow-md shadow-amber-400/20 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse-dot" />
-          <span className="text-[9px] text-white font-bold">STREAMING</span>
+        <span className="flex items-center gap-1 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
+          <span className="text-[9px] text-amber-400 font-mono">STREAM</span>
         </span>
       )}
 
       {/* Duration */}
-      <span className="text-[11px] text-slate-500 font-mono w-14 text-right shrink-0">
-        {formatDuration(r.duration)}
-      </span>
+      <span className="text-[11px] text-[#55555e] font-mono w-14 text-right shrink-0 text-tabular">{formatDuration(r.duration)}</span>
 
       {/* Tokens */}
-      <span className="text-[11px] text-slate-400 font-mono w-14 text-right shrink-0">
+      <span className="text-[11px] text-[#3a3a42] font-mono w-14 text-right shrink-0 text-tabular">
         {r.outputTokens > 0 ? formatTokens(r.outputTokens) : '-'}
       </span>
 
       {/* Cost */}
       <span className={cn(
-        'text-[11px] font-mono w-14 text-right shrink-0 font-medium',
-        r.estimatedCost > 0.01 ? 'text-emerald-600' : 'text-slate-300'
+        'text-[11px] font-mono w-14 text-right shrink-0 text-tabular',
+        r.estimatedCost > 0.01 ? 'text-emerald-500/60' : 'text-[#2a2a32]'
       )}>
         {r.estimatedCost > 0 ? formatCost(r.estimatedCost) : '-'}
       </span>
 
       {/* Time */}
-      <span className="text-[10px] text-slate-300 font-mono w-14 text-right shrink-0">
-        {formatTime(r.startedAt)}
-      </span>
+      <span className="text-[10px] text-[#2a2a32] font-mono w-14 text-right shrink-0 text-tabular">{formatTime(r.startedAt)}</span>
     </button>
   );
 }

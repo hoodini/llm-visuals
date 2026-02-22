@@ -23,19 +23,16 @@ export default function Dashboard() {
   const showDetail = selectedId !== null;
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground bright-mesh-bg">
+    <div className="flex flex-col h-screen bg-background text-foreground dot-grid">
       <Header />
       <div className="flex flex-1 overflow-hidden relative z-10">
-        {/* Left panel: Request list */}
-        <div className="w-[58%] border-r border-slate-200/60 flex flex-col overflow-hidden">
+        <div className="w-[58%] border-r border-[rgba(255,255,255,0.04)] flex flex-col overflow-hidden">
           <RequestList />
         </div>
 
-        {/* Right panel */}
-        <div className="w-[42%] flex flex-col overflow-hidden bg-slate-50/50">
-          {/* Panel switcher tabs */}
+        <div className="w-[42%] flex flex-col overflow-hidden bg-[#0a0a0f]/60">
           {hasRequests && (
-            <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-200/60 bg-white/60 backdrop-blur-sm">
+            <div className="flex items-center gap-0.5 px-3 py-2 border-b border-[rgba(255,255,255,0.04)]">
               {([
                 { id: 'metrics' as const, label: 'Metrics', icon: <BarChart3 className="w-3.5 h-3.5" /> },
                 { id: 'detail' as const, label: 'Inspector', icon: <Microscope className="w-3.5 h-3.5" /> },
@@ -51,15 +48,13 @@ export default function Dashboard() {
                     key={tab.id}
                     onClick={() => {
                       setRightPanel(tab.id);
-                      if (tab.id !== 'detail') {
-                        useRequestStore.getState().setSelectedId(null);
-                      }
+                      if (tab.id !== 'detail') useRequestStore.getState().setSelectedId(null);
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all',
                       isActive
-                        ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/20'
-                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/15'
+                        : 'text-[#55555e] hover:text-[#8b8b96]'
                     )}
                   >
                     {tab.icon}
@@ -70,14 +65,11 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Panel content */}
           <div className="flex-1 overflow-hidden">
             {showDetail || rightPanel === 'detail' ? (
               <RequestDetail />
             ) : rightPanel === 'feed' ? (
-              <div className="h-full overflow-y-auto">
-                <ActivityFeed />
-              </div>
+              <div className="h-full overflow-y-auto"><ActivityFeed /></div>
             ) : (
               <MetricsPanel />
             )}
