@@ -1,5 +1,7 @@
 # LLM Visuals - Real-Time LLM Traffic Observatory
 
+![LLM Visuals Dashboard](monitor.png)
+
 See exactly what your AI coding agents are sending and receiving. Every token, every hidden system prompt, every tool call - in real time.
 
 ```
