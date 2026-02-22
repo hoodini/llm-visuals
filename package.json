@@ -1,6 +1,7 @@
 {
   "name": "llm-visuals",
   "private": true,
+  "packageManager": "npm@11.5.1",
   "workspaces": [
     "packages/*"
   ],

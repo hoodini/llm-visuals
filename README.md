@@ -18,8 +18,10 @@ Your LLM Client                   LLM Visuals Proxy                    LLM API
 ## Table of Contents
 
 - [What Is This?](#what-is-this)
-- [Step-by-Step Installation (Humans)](#step-by-step-installation-humans)
-- [Step-by-Step Usage (Humans)](#step-by-step-usage-humans)
+- [Why Do I Need to Set localhost?](#why-do-i-need-to-set-localhost)
+- [What Works and What Doesn't](#what-works-and-what-doesnt)
+- [Step-by-Step Installation](#step-by-step-installation-humans)
+- [Step-by-Step Usage](#step-by-step-usage-humans)
 - [Connecting Every LLM Tool](#connecting-every-llm-tool)
 - [For LLM Agents / AI Coding Assistants](#for-llm-agents--ai-coding-assistants)
 - [What You Can See](#what-you-can-see)
@@ -32,9 +34,63 @@ Your LLM Client                   LLM Visuals Proxy                    LLM API
 
 ## What Is This?
 
-A reverse proxy + dashboard that sits between your LLM clients (Claude Code, GitHub Copilot, Claude Desktop, ChatGPT, Cursor, etc.) and the LLM APIs. It intercepts all traffic transparently, displays full request/response payloads, and provides real-time metrics.
+A reverse proxy + dashboard that sits between your LLM clients and the LLM APIs. It intercepts all traffic transparently, displays full request/response payloads, and provides real-time metrics.
 
 **Zero code changes. Zero certificates. Just one environment variable per provider.**
+
+## Why Do I Need to Set localhost?
+
+When you use Claude Code or any LLM tool, it sends HTTP requests directly to `api.anthropic.com` (or `api.openai.com`, etc.). The traffic goes straight from your machine to the API — you never see what's inside.
+
+```
+                    NORMAL (invisible)
+Claude Code  ────────────────────────────>  api.anthropic.com
+             You have no idea what's
+             being sent or received
+```
+
+By setting `ANTHROPIC_BASE_URL=http://localhost:4000/anthropic`, you're telling the tool: **"Don't talk to api.anthropic.com directly. Send your requests to my local proxy first."**
+
+```
+                    WITH PROXY (you see everything)
+Claude Code  ──>  localhost:4000  ──>  api.anthropic.com
+                       │
+                       │ Records everything,
+                       │ shows it on dashboard
+                       v
+                  localhost:3000
+                  (your browser)
+```
+
+The proxy receives the request, records it, forwards it unchanged to the real API, gets the response, records that too, and passes it back. Your tool works exactly the same — it just goes through a local middleman first.
+
+**Your API keys pass straight through.** The proxy doesn't need or store them. It just observes.
+
+## What Works and What Doesn't
+
+This proxy can only intercept tools that let you configure their API endpoint. Here's the reality:
+
+### Works (you can observe these)
+
+| Tool | How | Why it works |
+|------|-----|-------------|
+| **Claude Code** (VSCode + CLI) | `ANTHROPIC_BASE_URL` env var | Calls Anthropic API directly, respects the env var |
+| **Cursor** (with API key mode) | Settings → API endpoint | Calls APIs directly when using your own API key |
+| **Aider** | `ANTHROPIC_BASE_URL` / `OPENAI_BASE_URL` | Calls APIs directly, respects env vars |
+| **Continue** | Config file base URL | Calls APIs directly |
+| **Any script using OpenAI/Anthropic/Gemini SDKs** | `base_url` parameter or env var | You control the SDK config |
+| **LiteLLM, LangChain, etc.** | Base URL config | Most SDKs support custom endpoints |
+
+### Does NOT Work (cannot observe)
+
+| Tool | Why |
+|------|-----|
+| **GitHub Copilot** | Routes ALL traffic through GitHub's own servers (`api.github.com`), not through OpenAI/Anthropic directly. Even when you select Claude or GPT-4o as the model, the requests go to GitHub first. No env var to redirect it. |
+| **ChatGPT app/web** | Uses OpenAI's own infrastructure with a session token, not an API key. Cannot redirect. |
+| **Claude.ai web** | Same — uses Anthropic's own web infrastructure, not the API. |
+| **Copilot in Cursor** | When using Copilot subscription (not your own API key), traffic goes through GitHub. |
+
+**The rule**: If a tool uses YOUR API key and calls the provider API directly → works. If it uses its own backend servers → doesn't work.
 
 ---
 
@@ -204,22 +260,23 @@ Then **restart Claude Desktop** completely (quit and reopen).
 
 ### GitHub Copilot
 
-Copilot uses OpenAI-compatible endpoints. Set:
+**Copilot CANNOT be intercepted by this proxy.** Copilot routes all requests through GitHub's own backend servers (`api.github.com`), regardless of which model you select (Claude, GPT-4o, Gemini, o3, etc.). There is no env var or setting to redirect Copilot traffic.
 
-```bash
-export OPENAI_BASE_URL=http://localhost:4000/openai
-```
-
-Then restart VSCode.
+If you want to observe the same models Copilot uses, you can call them directly through their SDKs with your own API key — those calls CAN be intercepted.
 
 ### Cursor
 
-Cursor supports custom API endpoints in its settings:
+Cursor works in two modes:
 
-1. Open Cursor Settings
-2. Go to Models
-3. Set the OpenAI Base URL to: `http://localhost:4000/openai`
-4. Or for Anthropic models: `http://localhost:4000/anthropic`
+**With your own API key (interceptable):**
+1. Open Cursor Settings → Models
+2. Add your own API key for the provider
+3. Set the base URL:
+   - OpenAI models: `http://localhost:4000/openai`
+   - Anthropic models: `http://localhost:4000/anthropic`
+
+**With Cursor Pro subscription (NOT interceptable):**
+When using Cursor's built-in subscription, traffic goes through Cursor's own servers. You cannot redirect it.
 
 ### OpenAI API (direct usage)
 
